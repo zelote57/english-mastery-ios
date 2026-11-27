@@ -1,4 +1,4 @@
-// Presentation/
+// PresentationLayer.swift
 // SwiftUI Views and ViewModels
 //
 // Presentation layer following MVVM.
@@ -8,3 +8,6 @@
 // Reference: specs/05-ui-flows.md
 
 // TODO: Implement views according to specs/05-ui-flows.md
+
+/// Namespace for the Presentation layer.
+enum PresentationLayer {}

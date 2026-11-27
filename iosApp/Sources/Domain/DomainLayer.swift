@@ -1,4 +1,4 @@
-// Domain/
+// DomainLayer.swift
 // Pure Entities, Use Cases, and RAG Pipeline
 //
 // This module contains business logic independent of UI frameworks.
@@ -7,3 +7,6 @@
 // - RAGPipeline/: RAG pipeline protocol and logic
 
 // TODO: Implement domain entities according to specs/04-data-models.json
+
+/// Namespace for the Domain layer.
+enum DomainLayer {}

@@ -1,4 +1,4 @@
-// Data/
+// DataLayer.swift
 // SwiftData, PDFKit Parser, VectorStore, LLM Engine
 //
 // Concrete implementations of the interfaces defined in Domain.
@@ -8,3 +8,6 @@
 // - LLMEngine/: Integration with MLX Swift or MediaPipe
 
 // TODO: Implement data layer according to specs/03-rag-architecture.md
+
+/// Namespace for the Data layer.
+enum DataLayer {}

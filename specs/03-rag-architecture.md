@@ -31,7 +31,7 @@ Retrieval-Augmented Generation pipeline that runs **100% on-device** (iPhone 13 
 - Storage in SQLite with vector search extension or an in-memory cosine similarity index.
 - HNSW index for efficient search when exceeding 1,000 chunks.
 - Supports metadata filtering/prioritization by `level` and `topic` (including `spanish-interference` chunks).
-- The current index is in memory and uses exact cosine ranking with optional phase and topic filters. HNSW and index persistence are not yet implemented.
+- The current index is in memory and uses exact cosine ranking with optional phase and topic filters. Exact topic names take precedence; partial topic matches are used only when no exact topic exists at the requested level. HNSW and index persistence are not yet implemented.
 
 ### 4. On-Device LLM Generation
 - **MLX Swift:** Quantized small models (`Gemma` / `Phi-3-mini`) running locally on Apple Silicon via an `actor`-isolated engine.

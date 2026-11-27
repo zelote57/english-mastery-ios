@@ -32,9 +32,20 @@ actor VectorStore {
         guard limit > 0 else { return [] }
         guard !entries.isEmpty else { throw StoreError.emptyIndex }
         if let dimension, vector.count != dimension { throw StoreError.dimensionMismatch }
+        let hasExactTopic = topic.map { requested in
+            entries.contains {
+                (level == nil || $0.chunk.level == level)
+                    && $0.chunk.topic.localizedCaseInsensitiveCompare(requested) == .orderedSame
+            }
+        } ?? false
         return entries.enumerated().compactMap { index, entry -> (Int, KnowledgeChunk, Double)? in
             if let level, entry.chunk.level != level { return nil }
-            if let topic, !entry.chunk.topic.localizedCaseInsensitiveContains(topic) { return nil }
+            if let topic {
+                let matches = hasExactTopic
+                    ? entry.chunk.topic.localizedCaseInsensitiveCompare(topic) == .orderedSame
+                    : entry.chunk.topic.localizedCaseInsensitiveContains(topic)
+                if !matches { return nil }
+            }
             return (index, entry.chunk, Self.cosine(vector, entry.vector))
         }
         .sorted { $0.2 == $1.2 ? $0.0 < $1.0 : $0.2 > $1.2 }

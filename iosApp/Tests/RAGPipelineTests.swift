@@ -32,7 +32,10 @@ final class RAGPipelineTests: XCTestCase {
             let phase = try XCTUnwrap(phases.first { $0.id == skill.phaseId }?.toDomain())
             let results = try await index.search(skill.topic, level: phase.level, topic: skill.topic)
             XCTAssertFalse(results.isEmpty, "Missing indexed topic for \(skill.skillCode): \(skill.topic)")
-            XCTAssertTrue(results.allSatisfy { $0.level == phase.level && $0.topic == skill.topic })
+            XCTAssertTrue(
+                results.allSatisfy { $0.level == phase.level && $0.topic == skill.topic },
+                "Unexpected topic for \(skill.skillCode): \(results.map(\.topic))"
+            )
         }
         XCTAssertTrue(chunks.contains { $0.sourceFile == "structural-errors.md" })
         XCTAssertTrue(chunks.contains { $0.sourceFile == "false-friends.md" })
@@ -128,6 +131,26 @@ final class RAGPipelineTests: XCTestCase {
         } catch {
             XCTAssertEqual(error as? VectorStore.StoreError, .dimensionMismatch)
         }
+    }
+
+    func testExactTopicDoesNotMatchLongerTopicContainingItsName() async throws {
+        let store = VectorStore()
+        let regular = KnowledgeChunk(
+            sourceFile: "regular", content: "regular", level: .a2Init,
+            topic: "Regular past simple", chunkIndex: 0
+        )
+        let irregular = KnowledgeChunk(
+            sourceFile: "irregular", content: "irregular", level: .a2Init,
+            topic: "Irregular past simple", chunkIndex: 0
+        )
+        try await store.replace(with: [
+            IndexedChunk(chunk: regular, vector: [1, 0]),
+            IndexedChunk(chunk: irregular, vector: [1, 0])
+        ])
+        let exact = try await store.search(vector: [1, 0], level: .a2Init, topic: "regular past simple")
+        XCTAssertEqual(exact.map(\.topic), ["Regular past simple"])
+        let partial = try await store.search(vector: [1, 0], level: .a2Init, topic: "past simple")
+        XCTAssertEqual(Set(partial.map(\.topic)), Set(["Regular past simple", "Irregular past simple"]))
     }
 
     func testNativeEnglishEmbeddingWhenAvailable() async throws {

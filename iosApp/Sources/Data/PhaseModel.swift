@@ -1,6 +1,7 @@
 // PhaseModel.swift
 // SwiftData representation of a curriculum phase.
 
+import Foundation
 import SwiftData
 
 @Model
@@ -11,8 +12,6 @@ public final class PhaseModel {
     public var cambridgeAlignment: String
     public var order: Int
     public var status: String
-    // Relationship to its skills (inverse defined in SkillModel).
-    @Relationship(inverse: "phase") public var skills: [SkillModel] = []
 
     public init(id: UUID = UUID(), level: String, title: String, cambridgeAlignment: String, order: Int, status: String) {
         self.id = id

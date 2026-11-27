@@ -3,22 +3,19 @@ import SwiftData
 @testable import EnglishMastery
 
 final class RAGTests: XCTestCase {
-    // Helper to create a fresh in‑memory container for isolation.
     var container: ModelContainer!
     var context: ModelContext { container.mainContext }
 
     override func setUpWithError() throws {
-        // Define the same schema as the app.
         let schema = Schema([
             Chunk.self,
             PhaseModel.self,
             SkillModel.self,
             QuestionModel.self,
-            User.self
+            UserModel.self
         ])
-        container = try ModelContainer(for: schema, configurations: [])
-        // Ensure a clean state.
-        try context.deleteAll()
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        container = try ModelContainer(for: schema, configurations: [config])
     }
 
     func testEmbeddingGeneration() async throws {
@@ -28,16 +25,13 @@ final class RAGTests: XCTestCase {
     }
 
     func testInsertAndSearchChunk() async throws {
-        // Insert a chunk with a known vector (e.g., all ones).
         let text = "test chunk"
-        // Mock embedding: 3‑dim vector of ones encoded as JSON.
         let mockVec: [Double] = [1, 1, 1]
         let mockData = try JSONEncoder().encode(mockVec)
         let chunk = Chunk(text: text, embedding: mockData, questionId: nil)
         context.insert(chunk)
         try context.save()
 
-        // Search with identical query should return the same chunk.
         let results = try await VectorStore.search(query: "any query", topK: 1, in: context)
         XCTAssertEqual(results.count, 1)
         XCTAssertEqual(results.first?.text, text)

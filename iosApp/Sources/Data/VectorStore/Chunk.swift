@@ -1,22 +1,22 @@
 // Chunk.swift
 // SwiftData model for a text chunk used by the RAG pipeline.
-// Each chunk belongs to a Question and stores its embedding as binary data.
 
+import Foundation
 import SwiftData
 
 @Model
 public final class Chunk {
     @Attribute(.unique) public var id: UUID
     public var text: String
-    // Embedding stored as Data (e.g., Float32 array encoded as JSON or binary).
+    // Embedding stored as JSON‑encoded [Double].
     public var embedding: Data
-    // Relationship to the owning Question (optional to avoid circular import).
-    public var questionId: UUID
+    // UUID of the owning Question (plain FK – avoids cross‑target circular refs).
+    public var questionId: UUID?
 
-    public init(id: UUID = UUID(), text: String, embedding: Data, question: Question? = nil) {
+    public init(id: UUID = UUID(), text: String, embedding: Data, questionId: UUID? = nil) {
         self.id = id
         self.text = text
         self.embedding = embedding
-        self.question = question
+        self.questionId = questionId
     }
 }

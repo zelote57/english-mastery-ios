@@ -24,11 +24,12 @@
 - [x] `FeedbackView` with official score summary, expandable 3-heading Spanish fallback cards, and `MistakeDrillView` (`"Practice Missed Questions"` isolated loop)
 
 ### 🔍 Milestone 3 — RAG Pipeline
-- [ ] Markdown/PDF parser with PDFKit
-- [ ] Document chunking (~300 tokens) with 9-phase `level` metadata (`A1` to `B2_ADV`)
-- [ ] Embeddings with `NLEmbedding`
-- [ ] VectorStore with cosine similarity search
-- [ ] Pipeline unit tests
+- [x] Markdown/PDF parser with PDFKit
+- [x] Document chunking (~225 words as an approximate 300-token target) with 9-phase `level` metadata (`A1` to `B2_ADV`)
+- [x] Embeddings with `NLEmbedding`
+- [x] In-memory VectorStore with cosine similarity search
+- [x] Pipeline unit tests
+- [ ] Complete the grammar, Spanish-interference, and prompt-template knowledge base for all 29 skills and 9 phases
 
 ### 🤖 Milestone 4 — LLM Integration
 - [ ] Integrate MLX Swift (or MediaPipe) for on-device inference (`Gemma` / `Phi-3-mini`)

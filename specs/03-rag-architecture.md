@@ -18,16 +18,20 @@ Retrieval-Augmented Generation pipeline that runs **100% on-device** (iPhone 13 
 - Reads PDF and Markdown files from `/knowledge-base/` (`grammar-rules/`, `spanish-interference/`, `prompt-templates/`).
 - Extracts plain text and splits it into chunks of ~300 tokens preserving sentence/example boundaries.
 - Each chunk stores metadata: `level` (mapped to the 9 phase codes `A1`…`B2_ADV`), `topic`, `sourceFile`, and `chunkIndex`.
+- The app bundles `/knowledge-base/` as a folder. `manifest.json` lists each indexed Markdown/PDF file and its phase and topic; currently only the entries in the manifest are indexed.
+- Chunking uses approximately 225 word tokens as a 300-token estimate. Paragraphs and sentences are kept together where possible; exceptionally long sentences are split at word boundaries.
 
 ### 2. Embedding (`NLEmbedding` / CoreML)
 - **Option A:** `NLEmbedding` from Apple's `NaturalLanguage` framework (fast, built-in, offline).
 - **Option B:** Custom CoreML embedding model for higher semantic precision.
 - Generates 128–512 dimensional `[Float]` vectors per chunk.
+- The initial implementation averages the available English `NLEmbedding` word vectors for the document or query. Missing models or texts with no recognized words produce errors; the embedding instance is actor-isolated.
 
 ### 3. Vector Store
 - Storage in SQLite with vector search extension or an in-memory cosine similarity index.
 - HNSW index for efficient search when exceeding 1,000 chunks.
 - Supports metadata filtering/prioritization by `level` and `topic` (including `spanish-interference` chunks).
+- The current index is in memory and uses exact cosine ranking with optional phase and topic filters. HNSW and index persistence are not yet implemented.
 
 ### 4. On-Device LLM Generation
 - **MLX Swift:** Quantized small models (`Gemma` / `Phi-3-mini`) running locally on Apple Silicon via an `actor`-isolated engine.

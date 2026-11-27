@@ -25,6 +25,9 @@ targets:
       - path: Sources
       - path: Resources
         buildPhase: resources
+      - path: ../knowledge-base
+        type: folder
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.englishmastery.app

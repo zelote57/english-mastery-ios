@@ -1,0 +1,110 @@
+import PDFKit
+import UIKit
+import XCTest
+@testable import EnglishMastery
+
+@MainActor
+final class RAGPipelineTests: XCTestCase {
+    func testBundledCorpusLoadsMetadataAndCanBeSearched() async throws {
+        let chunks = try KnowledgeCorpus.load()
+        XCTAssertTrue(chunks.contains { $0.level == .a1 && $0.topic == "Verb to be" })
+        XCTAssertTrue(chunks.contains { $0.level == .a2Adv && $0.topic.contains("Prepositions") })
+        XCTAssertTrue(chunks.allSatisfy { !$0.content.isEmpty && !$0.sourceFile.isEmpty })
+
+        let index = KnowledgeIndex(embedding: TestEmbedding())
+        try await index.index(chunks)
+        let results = try await index.search("prepositions", level: .a2Adv, topic: "prepositions")
+        XCTAssertFalse(results.isEmpty)
+        XCTAssertTrue(results.allSatisfy { $0.level == .a2Adv && $0.topic.contains("Prepositions") })
+    }
+
+    func testChunkingPreservesParagraphsAndMetadata() {
+        let first = Array(repeating: "first", count: 160).joined(separator: " ")
+        let second = Array(repeating: "second", count: 160).joined(separator: " ")
+        let chunks = DocumentChunker.split(
+            "\(first)\n\n\(second)", sourceFile: "sample.md", level: .b2Adv, topic: "Grammar"
+        )
+        XCTAssertEqual(chunks.count, 2)
+        XCTAssertEqual(chunks.map(\.chunkIndex), [0, 1])
+        XCTAssertEqual(chunks.map(\.content), [first, second])
+        XCTAssertTrue(chunks.allSatisfy { $0.level == .b2Adv && $0.topic == "Grammar" })
+        XCTAssertTrue(DocumentChunker.split("", sourceFile: "empty", level: .a1, topic: "Grammar").isEmpty)
+
+        let longSentence = Array(repeating: "word", count: 500).joined(separator: " ")
+        let split = DocumentChunker.split(longSentence, sourceFile: "long.md", level: .a1, topic: "Grammar")
+        XCTAssertEqual(split.map { $0.content.split(separator: " ").count }, [225, 225, 50])
+        XCTAssertEqual(split.map(\.content).joined(separator: " "), longSentence)
+    }
+
+    func testPDFExtractionAndInvalidDocuments() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appendingPathComponent("rule.pdf")
+        let renderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 300, height: 300))
+        let data = renderer.pdfData { context in
+            context.beginPage()
+            ("English grammar example" as NSString).draw(
+                at: CGPoint(x: 20, y: 20), withAttributes: [.font: UIFont.systemFont(ofSize: 14)]
+            )
+        }
+        try data.write(to: url)
+        let chunks = try DocumentParser.parse(url: url, level: .b1Init, topic: "Grammar")
+        XCTAssertTrue(chunks[0].content.contains("English grammar example"))
+        XCTAssertEqual(chunks[0].level, .b1Init)
+
+        let invalid = directory.appendingPathComponent("invalid.pdf")
+        try Data("not a PDF".utf8).write(to: invalid)
+        XCTAssertThrowsError(try DocumentParser.parse(url: invalid, level: .a1, topic: "Grammar"))
+    }
+
+    func testCosineRankingFilteringAndInvalidVectors() async throws {
+        let store = VectorStore()
+        let chunks = [
+            KnowledgeChunk(sourceFile: "a", content: "exact", level: .a1, topic: "Grammar", chunkIndex: 0),
+            KnowledgeChunk(sourceFile: "b", content: "close", level: .a1, topic: "Grammar", chunkIndex: 0),
+            KnowledgeChunk(sourceFile: "c", content: "other", level: .b1Init, topic: "Vocabulary", chunkIndex: 0)
+        ]
+        try await store.replace(with: [
+            IndexedChunk(chunk: chunks[0], vector: [1, 0]),
+            IndexedChunk(chunk: chunks[1], vector: [1, 1]),
+            IndexedChunk(chunk: chunks[2], vector: [0, 1])
+        ])
+        let ranked = try await store.search(vector: [1, 0])
+        XCTAssertEqual(ranked.map(\.content), ["exact", "close", "other"])
+        let filtered = try await store.search(vector: [1, 0], level: .a1, topic: "grammar")
+        XCTAssertEqual(filtered.count, 2)
+        do {
+            try await store.replace(with: [IndexedChunk(chunk: chunks[0], vector: [0, 0])])
+            XCTFail("Zero vectors must be rejected")
+        } catch {
+            XCTAssertEqual(error as? VectorStore.StoreError, .invalidVector)
+        }
+        let afterFailure = try await store.search(vector: [1, 0])
+        XCTAssertEqual(afterFailure.count, 3)
+        do {
+            _ = try await store.search(vector: [1, 0, 0])
+            XCTFail("Mismatched dimensions must be rejected")
+        } catch {
+            XCTAssertEqual(error as? VectorStore.StoreError, .dimensionMismatch)
+        }
+    }
+
+    func testNativeEnglishEmbeddingWhenAvailable() async throws {
+        let provider = NaturalLanguageEmbedding()
+        do {
+            let vector = try await provider.embed("English grammar lesson")
+            XCTAssertTrue((128...512).contains(vector.count))
+            XCTAssertTrue(vector.allSatisfy(\.isFinite))
+            XCTAssertTrue(vector.contains { $0 != 0 })
+        } catch NaturalLanguageEmbedding.EmbeddingError.unavailable {
+            throw XCTSkip("English word embeddings are not available on this simulator.")
+        }
+    }
+}
+
+private struct TestEmbedding: EmbeddingProvider {
+    func embed(_ text: String) async throws -> [Float] {
+        text.localizedCaseInsensitiveContains("preposition") ? [1, 0] : [0, 1]
+    }
+}

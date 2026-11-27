@@ -10,15 +10,25 @@ public final class QuestionModel {
     public var prompt: String
     public var correctAnswer: String
     public var acceptedSynonymsJSON: String // JSON‑encoded [String]
-    public var distractorsJSON: String // JSON‑encoded [String]
+    public var distractorsJSON: String      // JSON‑encoded [String]
     public var questionType: String
     public var isPlacementEligible: Bool
     // Relationship to owning skill (inverse defined in SkillModel).
     @Relationship(inverse: "questions") public var skill: SkillModel?
-    // Relationship to its chunks (inverse defined in Chunk).
+    // Relationship to its chunks.
     @Relationship(inverse: "questionId") public var chunks: [Chunk] = []
 
-    public init(id: UUID = UUID(), skillId: UUID, prompt: String, correctAnswer: String, acceptedSynonyms: [String] = [], distractors: [String] = [], questionType: String, isPlacementEligible: Bool = false, skill: SkillModel? = nil) {
+    public init(
+        id: UUID = UUID(),
+        skillId: UUID,
+        prompt: String,
+        correctAnswer: String,
+        acceptedSynonyms: [String] = [],
+        distractors: [String] = [],
+        questionType: String,
+        isPlacementEligible: Bool = false,
+        skill: SkillModel? = nil
+    ) {
         self.id = id
         self.skillId = skillId
         self.prompt = prompt
@@ -31,18 +41,12 @@ public final class QuestionModel {
         self.isPlacementEligible = isPlacementEligible
         self.skill = skill
     }
-        self.id = id
-        self.skillId = skillId
-        self.prompt = prompt
-        self.correctAnswer = correctAnswer
-        self.acceptedSynonymsJSON = try! JSONEncoder().encode(acceptedSynonyms).map { String(UnicodeScalar($0)) }.joined()
-        self.distractorsJSON = try! JSONEncoder().encode(distractors).map { String(UnicodeScalar($0)) }.joined()
-        self.questionType = questionType
-        self.isPlacementEligible = isPlacementEligible
-        self.skill = skill
-    }
 
     // Helper to decode synonyms/distractors when needed.
-    public var acceptedSynonyms: [String] { (try? JSONDecoder().decode([String].self, from: Data(acceptedSynonymsJSON.utf8))) ?? [] }
-    public var distractors: [String] { (try? JSONDecoder().decode([String].self, from: Data(distractorsJSON.utf8))) ?? [] }
+    public var acceptedSynonyms: [String] {
+        (try? JSONDecoder().decode([String].self, from: Data(acceptedSynonymsJSON.utf8))) ?? []
+    }
+    public var distractors: [String] {
+        (try? JSONDecoder().decode([String].self, from: Data(distractorsJSON.utf8))) ?? []
+    }
 }

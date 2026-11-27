@@ -1,0 +1,32 @@
+{
+  "phases": [
+    {
+      "id": "00000000-0000-0000-0000-000000000001",
+      "level": "A1",
+      "title": "Beginner",
+      "cambridgeAlignment": "Cambridge A1",
+      "order": 1,
+      "status": "available"
+    }
+  ],
+  "skills": [
+    {
+      "id": "00000000-0000-0000-0000-000000000010",
+      "skillCode": "A1_01",
+      "topic": "Basic greetings",
+      "phaseId": "00000000-0000-0000-0000-000000000001"
+    }
+  ],
+  "questions": [
+    {
+      "id": "00000000-0000-0000-0000-000000000100",
+      "skillId": "00000000-0000-0000-0000-000000000010",
+      "prompt": "How do you say 'Hello' in Spanish?",
+      "correctAnswer": "Hola",
+      "acceptedSynonyms": [],
+      "distractors": ["Adiós", "Gracias"],
+      "questionType": "fillBlank",
+      "isPlacementEligible": true
+    }
+  ]
+}

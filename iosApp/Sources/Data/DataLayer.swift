@@ -10,4 +10,45 @@
 // TODO: Implement data layer according to specs/03-rag-architecture.md
 
 /// Namespace for the Data layer.
-enum DataLayer {}
+import SwiftData
+
+import SwiftData
+
+enum DataLayer {
+    // Simple embedding provider using Gemini on‑device API.
+    static var embedder = GeminiEmbeddingProvider()
+    // SwiftData container holding the persistence models used for RAG.
+    static let container: ModelContainer = {
+        // Include all SwiftData @Model entities.
+        let schema = Schema([
+            Chunk.self,
+            PhaseModel.self,
+            SkillModel.self,
+            QuestionModel.self,
+            User.self
+        ])
+        return try! ModelContainer(for: schema, configurations: [])
+    }()
+}
+    // Simple embedding provider using Gemini on‑device API.
+    static var embedder = GeminiEmbeddingProvider()
+    // SwiftData container holding the persistence models used for RAG.
+    static let container: ModelContainer = {
+        // Currently we only have Chunk as a @Model; add others when they become models.
+        let schema = Schema([Chunk.self])
+        return try! ModelContainer(for: schema, configurations: [])
+    }()
+}
+    // Simple embedding provider using Gemini on‑device API.
+    static let embedder = GeminiEmbeddingProvider()
+    // SwiftData container holding the persistence models used for RAG.
+    static let container: ModelContainer = {
+        // Currently we only have Chunk as a @Model; add others when they become models.
+        let schema = Schema([Chunk.self])
+        return try! ModelContainer(for: schema, configurations: [])
+    }()
+}
+    // Simple embedding provider using Gemini on‑device API.
+    // The provider returns the embedding as JSON‑encoded Data (Float64 array).
+    static let embedder = GeminiEmbeddingProvider()
+}

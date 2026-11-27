@@ -242,6 +242,7 @@ final class RAGPipelineTests: XCTestCase {
         XCTAssertNotNil(report.indexingMilliseconds)
         XCTAssertNotNil(report.averageQueryMilliseconds)
         XCTAssertNotNil(report.maximumSampledResidentBytes)
+        XCTAssertEqual(report.errors.filter { $0 != "Build commit is missing or invalid" }, [])
         let data = try JSONEncoder().encode(report)
         let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
         XCTAssertEqual(json["expectedCases"] as? Int, 36)

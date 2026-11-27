@@ -137,7 +137,7 @@ jobs:
           test -f "$APP/EnglishMastery"
           /usr/libexec/PlistBuddy -c "Add :RAGBuildCommit string ${{ github.sha }}" "$APP/Info.plist"
           test "$(/usr/libexec/PlistBuddy -c 'Print :RAGBuildCommit' "$APP/Info.plist")" = "${{ github.sha }}"
-          lipo -verify_arch arm64 "$APP/EnglishMastery"
+          lipo "$APP/EnglishMastery" -verify_arch arm64
           mkdir -p .ci-ipa/Payload
           cp -R "$APP" .ci-ipa/Payload/
           (cd .ci-ipa && zip -qry EnglishMastery-Diagnostic.ipa Payload)

@@ -12,7 +12,10 @@ jobs:
     runs-on: macos-15
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
+      - name: Prepare CI log directories
+        run: mkdir -p .ci-logs/text
 
       - name: Select Xcode 16+ (Swift 6)
         run: |
@@ -20,8 +23,10 @@ jobs:
           if [ -n "$XCODE_APP" ]; then
             sudo xcode-select -s "$XCODE_APP/Contents/Developer"
           fi
-          xcodebuild -version
-          swift --version
+          {
+            xcodebuild -version
+            swift --version
+          } 2>&1 | tee .ci-logs/text/00-environment.log
 
       - name: Install XcodeGen
         run: |
@@ -32,7 +37,9 @@ jobs:
 
       - name: Generate Xcode Project
         working-directory: iosApp
-        run: xcodegen generate
+        run: |
+          set -o pipefail
+          xcodegen generate 2>&1 | tee ../.ci-logs/text/01-xcodegen.log
 
       - name: Resolve iOS Simulator (iPhone 15 / iOS 17+)
         id: sim
@@ -62,10 +69,12 @@ jobs:
           print(best[4])
           PY
           )
+          echo "Selected simulator UDID: $SIM_UDID" > .ci-logs/text/00-simulator.log
           echo "udid=$SIM_UDID" >> "$GITHUB_OUTPUT"
 
       - name: Build for Testing
         run: |
+          set -o pipefail
           xcodebuild build-for-testing \
             -project iosApp/EnglishMastery.xcodeproj \
             -scheme EnglishMastery \
@@ -74,16 +83,99 @@ jobs:
             -derivedDataPath .derivedData \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee .ci-logs/text/02-build-for-testing.log
 
       - name: Run Tests
         run: |
+          set -o pipefail
+          rm -rf .ci-logs/TestResults.xcresult
           xcodebuild test \
             -project iosApp/EnglishMastery.xcodeproj \
             -scheme EnglishMastery \
             -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
             -configuration Debug \
             -derivedDataPath .derivedData \
+            -resultBundlePath .ci-logs/TestResults.xcresult \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee .ci-logs/text/03-xcodebuild-test.log
+
+      - name: Summarize Build & Test Diagnostics
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import os, re
+
+          log_files = [
+              ".ci-logs/text/00-environment.log",
+              ".ci-logs/text/01-xcodegen.log",
+              ".ci-logs/text/02-build-for-testing.log",
+              ".ci-logs/text/03-xcodebuild-test.log",
+          ]
+
+          env_always = {"00-environment.log"}
+          error_re = re.compile(r"\berror:\s", re.IGNORECASE)
+          match_patterns = [
+              error_re,
+              re.compile(r"\bwarning:\s", re.IGNORECASE),
+              re.compile(r"Test Case '.*' (passed|failed)"),
+              re.compile(r"Test Suite '.*' (passed|failed)"),
+              re.compile(r"^\s*Executed \d+ tests?"),
+              re.compile(r"\*\* (TEST BUILD|TEST) (SUCCEEDED|FAILED) \*\*"),
+              re.compile(r"^Failing tests:"),
+          ]
+
+          out_lines = []
+          for path in log_files:
+              if not os.path.exists(path):
+                  continue
+              name = os.path.basename(path)
+              out_lines.append(f"=== {name} ===")
+              with open(path, encoding="utf-8", errors="replace") as f:
+                  context_left = 0
+                  for line in f:
+                      clean = line.rstrip("\n")
+                      if name in env_always:
+                          out_lines.append(clean)
+                      elif error_re.search(clean):
+                          out_lines.append(clean)
+                          context_left = 2
+                      elif context_left > 0:
+                          out_lines.append(clean)
+                          context_left -= 1
+                      elif any(p.search(clean) for p in match_patterns):
+                          out_lines.append(clean)
+
+          summary_text = "\n".join(out_lines) if out_lines else "No diagnostic lines captured."
+          with open(".ci-logs/text/00-diagnostics-summary.txt", "w", encoding="utf-8") as out:
+              out.write(summary_text + "\n")
+
+          step_summary = os.environ.get("GITHUB_STEP_SUMMARY")
+          if step_summary:
+              with open(step_summary, "a", encoding="utf-8") as s:
+                  s.write("## iOS Build & Test Diagnostics\n\n```text\n")
+                  s.write(summary_text[:65000])
+                  s.write("\n```\n")
+          PY
+
+      - name: Upload Downloadable Text Logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-ci-logs-${{ github.run_number }}
+          path: .ci-logs/text
+          if-no-files-found: ignore
+          overwrite: true
+          retention-days: 14
+
+      - name: Upload Xcode Result Bundle on Failure (.xcresult)
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-xcresult-${{ github.run_number }}
+          path: .ci-logs/TestResults.xcresult
+          if-no-files-found: ignore
+          overwrite: true
+          retention-days: 7

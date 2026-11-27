@@ -15,8 +15,8 @@ final class MistakeDrillIsolationTests: XCTestCase {
         let submissions = Array(repeating: QuestionSubmission(question: qPass, userAnswer: "works"), count: 8)
             + [QuestionSubmission(question: qPartial, userAnswer: "studis")] // +0.5 partial (NOT queued for drill)
             + [
-                QuestionSubmission(question: qFail1, userAnswer: "watch", ragFeedback: "Explicación 1"),
-                QuestionSubmission(question: qFail2, userAnswer: "go", ragFeedback: "Explicación 2")
+                QuestionSubmission(question: qFail1, userAnswer: "watching", ragFeedback: "Explicación 1"), // 3 edits > 2 -> 0.0 miss
+                QuestionSubmission(question: qFail2, userAnswer: "go", ragFeedback: "Explicación 2")        // 2 edits > 1 -> 0.0 miss
             ]
 
         let evaluation = EvaluateAttemptUseCase.evaluate(
@@ -41,7 +41,7 @@ final class MistakeDrillIsolationTests: XCTestCase {
         XCTAssertEqual(drill.currentQuestion?.id, qFail1.id)
 
         // Wrong answer rotates qFail1 after qFail2
-        XCTAssertFalse(drill.submit(answer: "watch"))
+        XCTAssertFalse(drill.submit(answer: "watching"))
         XCTAssertEqual(drill.currentQuestion?.id, qFail2.id)
         XCTAssertFalse(drill.isCompleted)
 

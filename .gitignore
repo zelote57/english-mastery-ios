@@ -5,6 +5,7 @@
 xcuserdata/
 DerivedData/
 .derivedData/
+.ci-logs/
 build/
 *.ipa
 *.dSYM.zip

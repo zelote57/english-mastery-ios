@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "phases": [
     {
       "id": "5ff25c1c-8f32-5405-bbe4-9bc1ade7dfa5",
@@ -294,7 +294,7 @@
       "skillId": "82807689-7168-59e2-890d-43adb48b04ef",
       "prompt": "Complete the sentence: Look at that dog! ___ is very friendly.",
       "correctAnswer": "It",
-      "acceptedSynonyms": [],
+      "acceptedSynonyms": ["He", "She"],
       "distractors": [],
       "questionType": "fillBlank",
       "isPlacementEligible": false
@@ -319,7 +319,9 @@
       "prompt": "Translate into English: \"Él es mi amigo.\"",
       "correctAnswer": "He is my friend",
       "acceptedSynonyms": [
-        "He's my friend"
+        "He's my friend",
+        "He is a friend of mine",
+        "He's a friend of mine"
       ],
       "distractors": [],
       "questionType": "translation",
@@ -328,7 +330,7 @@
     {
       "id": "6435a652-cf2e-5808-8137-ffbcccfe8772",
       "skillId": "82807689-7168-59e2-890d-43adb48b04ef",
-      "prompt": "Complete with an object pronoun: Can you help ___ with this exercise?",
+      "prompt": "Complete with the object pronoun for the speaker: Can you help ___ with this exercise?",
       "correctAnswer": "me",
       "acceptedSynonyms": [],
       "distractors": [],
@@ -635,7 +637,7 @@
     {
       "id": "a36061f8-1118-5587-bbcf-7f7341f14cb4",
       "skillId": "fd65add0-73c0-5bef-a6b6-163496c6a98a",
-      "prompt": "Choose the correct article: She eats ___ apple every morning.",
+      "prompt": "Choose the correct indefinite article: She eats ___ apple every morning.",
       "correctAnswer": "an",
       "acceptedSynonyms": [],
       "distractors": [
@@ -683,7 +685,7 @@
     {
       "id": "c208ec57-6f3b-5b98-b2d8-89d92b7e4d01",
       "skillId": "fd65add0-73c0-5bef-a6b6-163496c6a98a",
-      "prompt": "Choose the correct option: He goes to ___ university by bus.",
+      "prompt": "Choose the correct indefinite article: He goes to ___ university by bus.",
       "correctAnswer": "a",
       "acceptedSynonyms": [],
       "distractors": [
@@ -957,7 +959,7 @@
       "skillId": "821223b1-49b6-5df6-b898-ad64457014c3",
       "prompt": "Translate into English: \"Mis llaves están aquí.\"",
       "correctAnswer": "My keys are here",
-      "acceptedSynonyms": [],
+      "acceptedSynonyms": ["Here are my keys"],
       "distractors": [],
       "questionType": "translation",
       "isPlacementEligible": false
@@ -1063,7 +1065,7 @@
       "distractors": [
         "open",
         "opening",
-        "is open"
+        "is opens"
       ],
       "questionType": "multipleChoice",
       "isPlacementEligible": false
@@ -1073,7 +1075,7 @@
       "skillId": "4b9d1cf9-0c23-5610-a5c5-121d1cf242d0",
       "prompt": "Translate into English: \"Ella trabaja en una oficina.\"",
       "correctAnswer": "She works in an office",
-      "acceptedSynonyms": [],
+      "acceptedSynonyms": ["She works at an office"],
       "distractors": [],
       "questionType": "translation",
       "isPlacementEligible": false
@@ -1261,7 +1263,7 @@
       "skillId": "e67a1e20-4244-5950-a97a-8cf055c2c720",
       "prompt": "Translate into English: \"Estudiamos inglés ayer.\"",
       "correctAnswer": "We studied English yesterday",
-      "acceptedSynonyms": [],
+      "acceptedSynonyms": ["Yesterday we studied English"],
       "distractors": [],
       "questionType": "translation",
       "isPlacementEligible": false
@@ -2137,7 +2139,7 @@
       "skillId": "fca92718-4c6b-5468-a845-0d15401816d5",
       "prompt": "Reorder the words: tomorrow / meet / airport / We / at / the / will",
       "correctAnswer": "We will meet at the airport tomorrow",
-      "acceptedSynonyms": [],
+      "acceptedSynonyms": ["We will meet tomorrow at the airport"],
       "distractors": [],
       "questionType": "reorder",
       "isPlacementEligible": false
@@ -2277,7 +2279,7 @@
       "correctAnswer": "She is the happiest person I know",
       "acceptedSynonyms": [],
       "distractors": [
-        "She is the most happy person I know",
+        "She is the more happier person I know",
         "She is happier person I know",
         "She is the happyest person I know"
       ],
@@ -2367,7 +2369,7 @@
     {
       "id": "cac326de-fd06-544b-aebf-177e3cf06f8a",
       "skillId": "26f56035-2556-5ddb-bfe0-4a8cefd459e9",
-      "prompt": "Choose the correct preposition: Put the letter ___ the envelope.",
+      "prompt": "Choose the correct preposition: Put the letter ___ the envelope so it is inside.",
       "correctAnswer": "in",
       "acceptedSynonyms": [],
       "distractors": [
@@ -2431,9 +2433,9 @@
       "correctAnswer": "on",
       "acceptedSynonyms": [],
       "distractors": [
-        "in",
+        "from",
         "at",
-        "by"
+        "of"
       ],
       "questionType": "multipleChoice",
       "isPlacementEligible": false
@@ -2869,7 +2871,9 @@
       "prompt": "Translate into English: \"¿Puedes ayudarme por favor?\"",
       "correctAnswer": "Can you help me please",
       "acceptedSynonyms": [
-        "Could you help me please"
+        "Could you help me please",
+        "Can you please help me",
+        "Could you please help me"
       ],
       "distractors": [],
       "questionType": "translation",
@@ -2938,7 +2942,7 @@
       "skillId": "8acb2ba6-c2e2-5207-a399-ec48dd7cb888",
       "prompt": "Complete with 'already' or 'yet': Have you finished packing ___?",
       "correctAnswer": "yet",
-      "acceptedSynonyms": [],
+      "acceptedSynonyms": ["already"],
       "distractors": [],
       "questionType": "fillBlank",
       "isPlacementEligible": false
@@ -3060,7 +3064,8 @@
       "correctAnswer": "I haven't done the homework yet",
       "acceptedSynonyms": [
         "I haven't done my homework yet",
-        "I have not done my homework yet"
+        "I have not done my homework yet",
+        "I have not done the homework yet"
       ],
       "distractors": [],
       "questionType": "translation",
@@ -3251,7 +3256,9 @@
       "prompt": "Translate into English: \"No lo veo desde el lunes.\"",
       "correctAnswer": "I haven't seen him since Monday",
       "acceptedSynonyms": [
-        "I have not seen him since Monday"
+        "I have not seen him since Monday",
+        "I haven't seen it since Monday",
+        "I have not seen it since Monday"
       ],
       "distractors": [],
       "questionType": "translation",
@@ -3332,7 +3339,7 @@
       "correctAnswer": "was walking",
       "acceptedSynonyms": [],
       "distractors": [
-        "walked",
+        "walking",
         "is walking",
         "walks"
       ],
@@ -3357,7 +3364,7 @@
       "acceptedSynonyms": [],
       "distractors": [
         "He was breaking his glasses while he cleaned them",
-        "He broke his glasses while he cleaned them",
+        "He broke his glasses while he was clean them",
         "He breaking his glasses while he was cleaning them"
       ],
       "questionType": "multipleChoice",
@@ -3662,7 +3669,7 @@
       "acceptedSynonyms": [],
       "distractors": [
         "Do",
-        "Would",
+        "Would to",
         "Did"
       ],
       "questionType": "multipleChoice",
@@ -4211,7 +4218,8 @@
       "correctAnswer": "He asked me if I was hungry",
       "acceptedSynonyms": [
         "She asked me if I was hungry",
-        "He asked me whether I was hungry"
+        "He asked me whether I was hungry",
+        "She asked me whether I was hungry"
       ],
       "distractors": [],
       "questionType": "translation",
@@ -4269,7 +4277,7 @@
       "acceptedSynonyms": [],
       "distractors": [
         "must",
-        "should",
+        "does",
         "have"
       ],
       "questionType": "multipleChoice",
@@ -4467,7 +4475,7 @@
       "correctAnswer": "give up",
       "acceptedSynonyms": [],
       "distractors": [
-        "give in",
+        "take off",
         "turn off",
         "put on"
       ],
@@ -4564,7 +4572,7 @@
       "skillId": "b40d0f01-840e-5e4e-a1bb-47d31e2ca2ef",
       "prompt": "Reorder the words: up / picked / the / ground / She / phone / from / the",
       "correctAnswer": "She picked up the phone from the ground",
-      "acceptedSynonyms": [],
+      "acceptedSynonyms": ["She picked the phone up from the ground"],
       "distractors": [],
       "questionType": "reorder",
       "isPlacementEligible": false
@@ -4759,8 +4767,8 @@
     {
       "id": "97ef8936-ca1e-5a19-8064-7ab97f3dd467",
       "skillId": "493d2940-c8cb-55cd-a576-b73b9c191214",
-      "prompt": "Reorder the words: missed / stayed / wouldn't / have / if / you / hadn't / You / late",
-      "correctAnswer": "You wouldn't have missed if you hadn't stayed late",
+      "prompt": "Reorder the words: missed / stayed / wouldn't / have / if / you / hadn't / You / late / it",
+      "correctAnswer": "You wouldn't have missed it if you hadn't stayed late",
       "acceptedSynonyms": [],
       "distractors": [],
       "questionType": "reorder",
@@ -5259,9 +5267,7 @@
       "skillId": "64d2f8b6-d492-5830-bd49-a66659cd2e00",
       "prompt": "Rewrite using 'SPITE' (max 4 words): Although it rained, we walked. -> ___ the rain, we walked.",
       "correctAnswer": "In spite of",
-      "acceptedSynonyms": [
-        "In spite"
-      ],
+      "acceptedSynonyms": [],
       "distractors": [],
       "questionType": "fillBlank",
       "isPlacementEligible": false

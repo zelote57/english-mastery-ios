@@ -308,6 +308,35 @@ final class SwiftDataPersistenceTests: XCTestCase {
         }
     }
 
+    func testReconciledCurriculumGradesEquivalentAnswersAndRejectsInvalidTransformation() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        try CurriculumSeeder.seedIfNeeded(in: context)
+        let questions = try context.fetch(FetchDescriptor<QuestionModel>())
+        let reorder = try XCTUnwrap(questions.first {
+            $0.correctAnswer == "She picked up the phone from the ground"
+        })
+        reorder.acceptedSynonymsJSON = "[]"
+        try context.save()
+        try CurriculumSeeder.seedIfNeeded(in: context)
+        let alternatives = [
+            ("She picked up the phone from the ground", "She picked the phone up from the ground"),
+            ("We will meet at the airport tomorrow", "We will meet tomorrow at the airport"),
+            ("He is my friend", "He is a friend of mine"),
+            ("I haven't seen him since Monday", "I haven't seen it since Monday")
+        ]
+        for (answer, alternative) in alternatives {
+            let model = try XCTUnwrap(questions.first { $0.correctAnswer == answer })
+            let question = try XCTUnwrap(model.toDomain())
+            XCTAssertEqual(ScoringEngine.grade(answer: alternative, for: question).pointsEarned, 1, alternative)
+        }
+        let packing = try XCTUnwrap(questions.first { $0.prompt.contains("Have you finished packing") }?.toDomain())
+        XCTAssertEqual(ScoringEngine.grade(answer: "already", for: packing).pointsEarned, 1)
+        let model = try XCTUnwrap(questions.first { $0.correctAnswer == "In spite of" })
+        let question = try XCTUnwrap(model.toDomain())
+        XCTAssertEqual(ScoringEngine.grade(answer: "In spite", for: question).pointsEarned, 0)
+    }
+
     func testFailedCurriculumUpdateRollsBackEarlierChanges() throws {
         let container = try makeInMemoryContainer()
         let context = container.mainContext

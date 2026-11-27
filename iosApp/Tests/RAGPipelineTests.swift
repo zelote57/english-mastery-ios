@@ -178,6 +178,23 @@ final class RAGPipelineTests: XCTestCase {
                 level: .a2Adv, topic: "Prepositions of place/time"
             )
             XCTAssertTrue(prepositions.contains { $0.content.localizedCaseInsensitiveContains("depend") })
+            let cases: [(PhaseLevel, String, String, String)] = [
+                (.a1, "Personal pronouns", "Me work here instead of I work here", "subject"),
+                (.a2Init, "Regular past simple", "She studyed instead of she studied yesterday", "studied"),
+                (.a2Int, "Comparatives and superlatives", "more fast instead of faster", "faster"),
+                (.b1Init, "for vs since", "since three years instead of for three years", "for three years"),
+                (.b1Int, "Gerunds vs infinitives", "I enjoy to read instead of I enjoy reading", "enjoy"),
+                (.b1Adv, "Reported speech", "She said me instead of she told me", "told me"),
+                (.b2Init, "wish / if only", "I wish I have more time instead of I wish I had more time", "wish"),
+                (.b2Adv, "Advanced collocations", "make attention instead of pay attention", "attention")
+            ]
+            for (level, topic, query, expected) in cases {
+                let results = try await index.search(query, level: level, topic: topic)
+                XCTAssertTrue(
+                    results.contains { $0.content.localizedCaseInsensitiveContains(expected) },
+                    "No relevant top-three chunk for \(topic)"
+                )
+            }
         } catch NaturalLanguageEmbedding.EmbeddingError.unavailable {
             throw XCTSkip("English word embeddings are not available on this simulator.")
         }

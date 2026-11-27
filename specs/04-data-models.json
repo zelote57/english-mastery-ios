@@ -1,0 +1,103 @@
+{
+  "version": "1.1",
+  "description": "Data contracts for English Mastery iOS (9-Phase Cambridge CEFR Engine)",
+  "models": {
+    "User": {
+      "properties": {
+        "id": { "type": "UUID", "description": "Unique user identifier" },
+        "name": { "type": "String", "description": "User name" },
+        "currentPhaseId": { "type": "UUID", "description": "FK to the user's active Phase" },
+        "createdAt": { "type": "Date", "description": "Account creation date" },
+        "streakDays": { "type": "Int", "default": 0, "description": "Consecutive calendar days with completed official practice" },
+        "lastPracticeDate": { "type": "Date?", "description": "Timestamp of the most recent completed official Attempt for streak calculation" },
+        "hasCompletedOnboarding": { "type": "Bool", "default": false, "description": "True after selecting Start from Scratch or finishing Placement Test" },
+        "placementPhaseCode": { "type": "String?", "description": "Optional Phase.level code assigned by the 18-question Placement Test" }
+      }
+    },
+    "Phase": {
+      "properties": {
+        "id": { "type": "UUID" },
+        "level": {
+          "type": "String",
+          "enum": ["A1", "A2_INIT", "A2_INT", "A2_ADV", "B1_INIT", "B1_INT", "B1_ADV", "B2_INIT", "B2_ADV"]
+        },
+        "title": { "type": "String", "description": "Human-readable phase name (e.g., A2 Initial)" },
+        "cambridgeAlignment": { "type": "String", "description": "Cambridge qualification alignment (e.g., A2 Key (Part 1))" },
+        "order": { "type": "Int", "description": "Sequential order (1-9)" },
+        "status": {
+          "type": "String",
+          "enum": ["locked", "available", "completed", "skippedPassed"],
+          "default": "locked",
+          "description": "skippedPassed is set for Phases 1...(K-1) when Placement Test places user at Phase K"
+        },
+        "skills": { "type": "[Skill]", "relationship": "one-to-many" }
+      }
+    },
+    "Skill": {
+      "properties": {
+        "id": { "type": "UUID" },
+        "skillCode": { "type": "String", "description": "E.g.: A1-01, B1_ADV-02" },
+        "topic": { "type": "String" },
+        "phaseId": { "type": "UUID", "description": "FK to Phase" },
+        "isPassed": { "type": "Bool", "default": false },
+        "bestScore": { "type": "Double", "default": 0.0 }
+      }
+    },
+    "Question": {
+      "properties": {
+        "id": { "type": "UUID" },
+        "skillId": { "type": "UUID", "description": "FK to Skill" },
+        "prompt": { "type": "String", "description": "Question prompt in English" },
+        "correctAnswer": { "type": "String" },
+        "acceptedSynonyms": { "type": "[String]", "default": [], "description": "Alternative valid answers awarded +1.0 pt" },
+        "distractors": { "type": "[String]", "description": "Incorrect options (shuffled on every attempt)" },
+        "questionType": { "type": "String", "enum": ["multipleChoice", "fillBlank", "translation", "reorder"] },
+        "isPlacementEligible": { "type": "Bool", "default": false, "description": "Eligible for the 18-question diagnostic Placement Test (2 per phase)" }
+      }
+    },
+    "Attempt": {
+      "properties": {
+        "id": { "type": "UUID" },
+        "userId": { "type": "UUID" },
+        "skillId": { "type": "UUID?", "description": "Required for skillAssessment; nil for placementTest" },
+        "attemptType": {
+          "type": "String",
+          "enum": ["skillAssessment", "placementTest"],
+          "default": "skillAssessment",
+          "description": "Mistake drills are ephemeral reinforcement sessions and must NOT be stored as official Attempts"
+        },
+        "score": { "type": "Double", "description": "Normalized score from 0.0 to 1.0 (earnedPoints / Double(totalQuestions))" },
+        "earnedPoints": { "type": "Double", "description": "Sum of +1.0, +0.5, and 0.0 question points" },
+        "totalQuestions": { "type": "Int", "description": "15 for skillAssessment; 18 for placementTest" },
+        "correctAnswers": { "type": "Int", "description": "Count of full +1.0 answers" },
+        "timestamp": { "type": "Date" },
+        "answers": { "type": "[AnswerRecord]", "relationship": "one-to-many" }
+      }
+    },
+    "AnswerRecord": {
+      "properties": {
+        "id": { "type": "UUID" },
+        "attemptId": { "type": "UUID" },
+        "questionId": { "type": "UUID" },
+        "userAnswer": { "type": "String" },
+        "pointsEarned": { "type": "Double", "description": "1.0 (correct), 0.5 (partial spelling slip), or 0.0 (incorrect)" },
+        "isCorrect": { "type": "Bool", "description": "True only when pointsEarned == 1.0" },
+        "ragFeedback": { "type": "String?", "description": "Spanish RAG-generated explanation stored when pointsEarned == 0.0" }
+      }
+    },
+    "Chunk": {
+      "properties": {
+        "id": { "type": "UUID" },
+        "sourceFile": { "type": "String", "description": "Source file name" },
+        "content": { "type": "String", "description": "Chunk text (~300 tokens)" },
+        "embedding": { "type": "[Float]", "description": "Embedding vector" },
+        "level": {
+          "type": "String",
+          "enum": ["A1", "A2_INIT", "A2_INT", "A2_ADV", "B1_INIT", "B1_INT", "B1_ADV", "B2_INIT", "B2_ADV"]
+        },
+        "topic": { "type": "String" },
+        "chunkIndex": { "type": "Int", "description": "Position within the source document" }
+      }
+    }
+  }
+}

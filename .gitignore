@@ -1,0 +1,41 @@
+# Xcode & XcodeGen (Project.yml is source of truth; CI runs xcodegen generate)
+*.xcodeproj/
+*.xcworkspace/
+!*.xcworkspace/contents.xcworkspacedata
+xcuserdata/
+DerivedData/
+.derivedData/
+build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+*.xccheckout
+*.moved-aside
+*.hmap
+
+# Swift Package Manager & CocoaPods
+.build/
+.swiftpm/
+Packages/
+Package.resolved
+
+# On-device LLM weights & large binary assets
+*.safetensors
+*.gguf
+*.bin
+*.onnx
+*.mlpackage
+*.mlmodelc
+
+# Secrets & local configs
+.env
+.env.*
+mcp_config.json
+
+# OS artifacts
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini
+*.swp
+*~

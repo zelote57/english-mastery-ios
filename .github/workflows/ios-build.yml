@@ -1,0 +1,89 @@
+# ⚙️ CI/CD: Generate Xcode project, build, and run tests on GitHub macOS runner
+name: iOS Build & Test
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: macos-15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 16+ (Swift 6)
+        run: |
+          XCODE_APP=$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -n 1 || true)
+          if [ -n "$XCODE_APP" ]; then
+            sudo xcode-select -s "$XCODE_APP/Contents/Developer"
+          fi
+          xcodebuild -version
+          swift --version
+
+      - name: Install XcodeGen
+        run: |
+          if ! command -v xcodegen >/dev/null 2>&1; then
+            HOMEBREW_NO_AUTO_UPDATE=1 brew install xcodegen
+          fi
+          xcodegen --version
+
+      - name: Generate Xcode Project
+        working-directory: iosApp
+        run: xcodegen generate
+
+      - name: Resolve iOS Simulator (iPhone 15 / iOS 17+)
+        id: sim
+        run: |
+          SIM_UDID=$(python3 - <<'PY'
+          import json, re, subprocess, sys
+
+          data = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "available", "--json"]))
+          candidates = []
+          for runtime, devices in data.get("devices", {}).items():
+              m = re.search(r"iOS-(\d+)-(\d+)", runtime)
+              if not m:
+                  continue
+              major, minor = int(m.group(1)), int(m.group(2))
+              if major < 17:
+                  continue
+              for d in devices:
+                  if d.get("isAvailable") and "iPhone" in d.get("name", ""):
+                      candidates.append((d["name"] == "iPhone 15", major, minor, d["name"], d["udid"]))
+
+          if not candidates:
+              raise SystemExit("No available iOS 17+ iPhone simulator found on runner.")
+
+          candidates.sort(key=lambda item: (item[0], item[1], item[2], item[3]), reverse=True)
+          best = candidates[0]
+          print(f"Selected simulator: {best[3]} (iOS {best[1]}.{best[2]}, {best[4]})", file=sys.stderr, flush=True)
+          print(best[4])
+          PY
+          )
+          echo "udid=$SIM_UDID" >> "$GITHUB_OUTPUT"
+
+      - name: Build for Testing
+        run: |
+          xcodebuild build-for-testing \
+            -project iosApp/EnglishMastery.xcodeproj \
+            -scheme EnglishMastery \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -configuration Debug \
+            -derivedDataPath .derivedData \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Run Tests
+        run: |
+          xcodebuild test \
+            -project iosApp/EnglishMastery.xcodeproj \
+            -scheme EnglishMastery \
+            -destination "platform=iOS Simulator,id=${{ steps.sim.outputs.udid }}" \
+            -configuration Debug \
+            -derivedDataPath .derivedData \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO

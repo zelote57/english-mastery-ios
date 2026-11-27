@@ -30,7 +30,7 @@ Consult these specs and knowledge-base docs before building or modifying RAG cod
 - **`iosApp/Sources/Domain/RAG/` and `Domain/Entities/`**: `EmbeddingProvider` and the `Sendable` `KnowledgeChunk` value.
 - **`iosApp/Sources/Data/RAG/`**: Markdown/PDF parser, chunker, native embedding, in-memory vector store and knowledge index.
 - **Current status:** Retrieval is tested independently; `TestView` uses a deterministic fallback. Model provisioning, LLM inference and RAG integration into assessments are planned for Milestone 4.
-- **Physical-device validation:** The diagnostic IPA and report workflow are described in `specs/06-roadmap-milestones.md`; physical-device validation remains pending.
+- **Physical-device validation:** The isolated diagnostic benchmark was run offline on a physical device; its results and limitations are recorded in `specs/06-roadmap-milestones.md`.
 
 ## Target Pedagogical Feedback Procedure
 

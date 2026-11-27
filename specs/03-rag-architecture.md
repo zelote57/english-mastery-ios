@@ -14,8 +14,9 @@ Retrieval-Augmented Generation pipeline that runs **100% on-device** (iPhone 13 
 - Retrieval is not yet connected to the assessment UI. Wrong answers currently use a
   deterministic Spanish skill-rule fallback; model download, LLM inference and dynamic
   RAG-generated feedback are Milestone 4 work.
-- Physical-device offline and performance validation is pending. The diagnostic build, device
-  benchmark and JSON export procedure are described in `06-roadmap-milestones.md`.
+- The isolated diagnostic benchmark has been run offline on a physical device, with usable
+  timing and sampled memory evidence. No performance threshold has been defined; the procedure,
+  results, and limitations are described in `06-roadmap-milestones.md`.
 
 ## Pipeline Components
 

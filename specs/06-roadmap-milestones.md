@@ -32,17 +32,23 @@
 - [x] Pipeline unit tests
 - [x] Add grammar, Spanish-interference, and prompt-template knowledge assets for all 29 skills and 9 phases
 - [x] Evaluate retrieval relevance against representative seeded mistakes across all 29 skills
-- [ ] Produce a device-compatible unsigned diagnostic IPA in GitHub Actions for personal installation with Sideloadly
-- [ ] Add a diagnostic-only screen to run the benchmark on a device and export the results
-- [ ] Install the IPA, execute the diagnostic offline on a physical iPhone, and review the resulting evidence
+- [x] Produce a device-compatible unsigned diagnostic IPA in GitHub Actions for personal installation with Sideloadly
+- [x] Add a diagnostic-only screen to run the benchmark on a device and export the results
+- [x] Install the IPA, execute the diagnostic offline on a physical iPhone, and review the resulting evidence
 
 The simulator retrieval benchmark uses 36 zero-point answers from 29 skills. The explicitly
 selected rule appeared in the filtered top three for 36/36 queries and ranked first for 33/36.
 This representative sample does not establish relevance for every question or unfiltered
-search. Physical-device validation of offline operation, latency, and memory usage remains
-necessary. The benchmark and 42 tests passed in
-[GitHub Actions run 46066708173](https://github.com/zelote57/english-mastery-ios/actions/runs/46066708173)
-for commit `f29e4ae`.
+search. The diagnostic and standard builds and 44 tests passed in
+[GitHub Actions run 46074217849](https://github.com/zelote57/english-mastery-ios/actions/runs/46074217849)
+for commit `c119781`. The exported physical-device report for that commit recorded 36/36
+top-3, 33/36 top-1, no errors, and usable timing and sampled memory measurements. The owner
+confirmed a fresh launch with the device offline. This validates the diagnostic path, not every
+possible app path or a performance target.
+
+The report's app version is `unavailable`: `Project.yml` does not explicitly configure a
+marketing version, and the precise cause of the missing runtime value has not been verified.
+The commit SHA identifies this build; configure and verify a release version before distribution.
 
 #### Physical-device validation procedure
 1. After simulator tests pass, Actions builds for a generic iOS **device**, packages the unsigned

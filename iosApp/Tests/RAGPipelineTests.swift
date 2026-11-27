@@ -269,12 +269,12 @@ private struct TestEmbedding: EmbeddingProvider {
     func embed(_ text: String) async throws -> [Float] {
         text.localizedCaseInsensitiveContains("preposition") ? [1, 0] : [0, 1]
     }
+}
 
-    private struct FailingTestEmbedding: EmbeddingProvider {
-        enum Failure: Error { case unavailable }
+private struct FailingTestEmbedding: EmbeddingProvider {
+    enum Failure: Error { case unavailable }
 
-        func embed(_ text: String) async throws -> [Float] {
-            throw Failure.unavailable
-        }
+    func embed(_ text: String) async throws -> [Float] {
+        throw Failure.unavailable
     }
 }

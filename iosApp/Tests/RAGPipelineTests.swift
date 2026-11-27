@@ -27,11 +27,34 @@ final class RAGPipelineTests: XCTestCase {
         let chunks = try KnowledgeCorpus.load()
         let index = KnowledgeIndex(embedding: TestEmbedding())
         try await index.index(chunks)
-        for code in ["A1-02", "A2_ADV-01"] {
-            let skill = try XCTUnwrap(skills.first { $0.skillCode == code })
+        XCTAssertEqual(skills.count, 29)
+        for skill in skills {
             let phase = try XCTUnwrap(phases.first { $0.id == skill.phaseId }?.toDomain())
             let results = try await index.search(skill.topic, level: phase.level, topic: skill.topic)
-            XCTAssertFalse(results.isEmpty, "Missing indexed topic for \(code): \(skill.topic)")
+            XCTAssertFalse(results.isEmpty, "Missing indexed topic for \(skill.skillCode): \(skill.topic)")
+            XCTAssertTrue(results.allSatisfy { $0.level == phase.level && $0.topic == skill.topic })
+        }
+        XCTAssertTrue(chunks.contains { $0.sourceFile == "structural-errors.md" })
+        XCTAssertTrue(chunks.contains { $0.sourceFile == "false-friends.md" })
+        XCTAssertTrue(chunks.contains {
+            $0.topic == "Prepositions of place/time" && $0.content.localizedCaseInsensitiveContains("marry someone")
+        })
+    }
+
+    func testPromptTemplatesIncludeGroundingAndOutputContract() throws {
+        let root = try XCTUnwrap(Bundle.main.url(forResource: "knowledge-base", withExtension: nil))
+        let names = ["grammar-correction", "vocabulary-confusion", "preposition-error", "word-order"]
+        let required = [
+            "{level}", "{skill_topic}", "{user_answer}", "{correct_answer}", "{question}", "{rag_chunks}",
+            "### 💡 ¿Por qué no es correcta?", "### 📘 Regla clave", "### 🔍 Ejemplos prácticos",
+            "fewer than 150 words"
+        ]
+        for name in names {
+            let url = root.appendingPathComponent("prompt-templates").appendingPathComponent("\(name).md")
+            let text = try String(contentsOf: url, encoding: .utf8)
+            for value in required {
+                XCTAssertTrue(text.contains(value), "\(name) is missing \(value)")
+            }
         }
     }
 
@@ -118,16 +141,22 @@ final class RAGPipelineTests: XCTestCase {
             throw XCTSkip("English word embeddings are not available on this simulator.")
         }
 
-        func testNativeEmbeddingSearchesBundledTopicWhenAvailable() async throws {
-            let index = KnowledgeIndex()
-            do {
-                try await index.index(KnowledgeCorpus.load())
-                let results = try await index.search("verb to be grammar", level: .a1, topic: "Verb \"to be\"")
-                XCTAssertFalse(results.isEmpty)
-                XCTAssertTrue(results.allSatisfy { $0.topic == "Verb \"to be\"" })
-            } catch NaturalLanguageEmbedding.EmbeddingError.unavailable {
-                throw XCTSkip("English word embeddings are not available on this simulator.")
-            }
+    }
+
+    func testNativeEmbeddingSearchesBundledTopicWhenAvailable() async throws {
+        let index = KnowledgeIndex()
+        do {
+            try await index.index(KnowledgeCorpus.load())
+            let results = try await index.search("verb to be grammar", level: .a1, topic: "Verb \"to be\"")
+            XCTAssertFalse(results.isEmpty)
+            XCTAssertTrue(results.allSatisfy { $0.topic == "Verb \"to be\"" })
+            let prepositions = try await index.search(
+                "Grammar rule for prepositions and error depends of instead of depends on",
+                level: .a2Adv, topic: "Prepositions of place/time"
+            )
+            XCTAssertTrue(prepositions.contains { $0.content.localizedCaseInsensitiveContains("depend") })
+        } catch NaturalLanguageEmbedding.EmbeddingError.unavailable {
+            throw XCTSkip("English word embeddings are not available on this simulator.")
         }
     }
 }

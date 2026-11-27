@@ -1,17 +1,34 @@
 [
-  {
-    "path": "grammar-rules/A1/verb-to-be.md",
-    "level": "A1",
-    "topic": "Verb \"to be\""
-  },
-  {
-    "path": "grammar-rules/A2/prepositions.md",
-    "level": "A2_ADV",
-    "topic": "Prepositions of place/time"
-  },
-  {
-    "path": "spanish-interference/structural-errors.md",
-    "level": "A1",
-    "topic": "Spanish interference and sentence structure"
-  }
+  { "path": "grammar-rules/A1/pronouns.md", "level": "A1", "topic": "Personal pronouns" },
+  { "path": "grammar-rules/A1/verb-to-be.md", "level": "A1", "topic": "Verb \"to be\"" },
+  { "path": "grammar-rules/A1/articles.md", "level": "A1", "topic": "Articles (a/an/the)" },
+  { "path": "grammar-rules/A1/plurals.md", "level": "A1", "topic": "Regular plurals" },
+  { "path": "grammar-rules/A1/present-simple.md", "level": "A1", "topic": "Simple present" },
+  { "path": "grammar-rules/A2/past-simple.md", "level": "A2_INIT", "topic": "Regular past simple" },
+  { "path": "grammar-rules/A2/past-simple.md", "level": "A2_INIT", "topic": "Irregular past simple" },
+  { "path": "grammar-rules/A2/time-expressions.md", "level": "A2_INIT", "topic": "Basic time expressions" },
+  { "path": "grammar-rules/A2/future-forms.md", "level": "A2_INT", "topic": "Future with \"going to\"" },
+  { "path": "grammar-rules/A2/future-forms.md", "level": "A2_INT", "topic": "Future with \"will\"" },
+  { "path": "grammar-rules/A2/comparatives.md", "level": "A2_INT", "topic": "Comparatives and superlatives" },
+  { "path": "grammar-rules/A2/prepositions.md", "level": "A2_ADV", "topic": "Prepositions of place/time" },
+  { "path": "grammar-rules/A2/quantifiers.md", "level": "A2_ADV", "topic": "Quantifiers" },
+  { "path": "grammar-rules/A2/basic-modals.md", "level": "A2_ADV", "topic": "Basic modals" },
+  { "path": "grammar-rules/B1/present-perfect-for-since.md", "level": "B1_INIT", "topic": "Present perfect (ever/never/already/yet)" },
+  { "path": "grammar-rules/B1/present-perfect-for-since.md", "level": "B1_INIT", "topic": "for vs since" },
+  { "path": "grammar-rules/B1/past-continuous.md", "level": "B1_INIT", "topic": "Past continuous" },
+  { "path": "grammar-rules/B1/conditionals-1-2.md", "level": "B1_INT", "topic": "Conditionals (1st & 2nd)" },
+  { "path": "grammar-rules/B1/passive-voice.md", "level": "B1_INT", "topic": "Passive voice (present & past simple)" },
+  { "path": "grammar-rules/B1/gerunds-infinitives.md", "level": "B1_INT", "topic": "Gerunds vs infinitives" },
+  { "path": "grammar-rules/B1/reported-speech.md", "level": "B1_ADV", "topic": "Reported speech" },
+  { "path": "grammar-rules/B1/modals-deduction-advice.md", "level": "B1_ADV", "topic": "Modals of deduction & advice" },
+  { "path": "grammar-rules/B1/phrasal-verbs.md", "level": "B1_ADV", "topic": "Core phrasal verbs" },
+  { "path": "grammar-rules/B2/conditionals-3-mixed.md", "level": "B2_INIT", "topic": "3rd & mixed conditionals" },
+  { "path": "grammar-rules/B2/relative-clauses.md", "level": "B2_INIT", "topic": "Defining & non-defining relative clauses" },
+  { "path": "grammar-rules/B2/wish-if-only.md", "level": "B2_INIT", "topic": "wish / if only" },
+  { "path": "grammar-rules/B2/key-word-transformations.md", "level": "B2_ADV", "topic": "Key word transformations" },
+  { "path": "grammar-rules/B2/collocations.md", "level": "B2_ADV", "topic": "Advanced collocations" },
+  { "path": "grammar-rules/B2/linking-words.md", "level": "B2_ADV", "topic": "Discourse markers & linking words" },
+  { "path": "spanish-interference/structural-errors.md", "level": "A1", "topic": "Spanish interference and sentence structure" },
+  { "path": "spanish-interference/prepositions.md", "level": "A2_ADV", "topic": "Prepositions of place/time" },
+  { "path": "spanish-interference/false-friends.md", "level": "B2_ADV", "topic": "Spanish interference and false friends" }
 ]

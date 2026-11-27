@@ -30,7 +30,7 @@
 - [x] Embeddings with `NLEmbedding`
 - [x] In-memory VectorStore with cosine similarity search
 - [x] Pipeline unit tests
-- [ ] Complete the grammar, Spanish-interference, and prompt-template knowledge base for all 29 skills and 9 phases
+- [x] Add grammar, Spanish-interference, and prompt-template knowledge assets for all 29 skills and 9 phases
 - [ ] Evaluate retrieval relevance against the completed corpus and validate on a physical device
 
 ### 🤖 Milestone 4 — LLM Integration

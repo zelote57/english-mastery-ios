@@ -8,7 +8,7 @@ import Foundation
 /// Generates a simple bag‑of‑characters embedding (sum of UTF‑8 scalar values per token).
 /// This is a deterministic placeholder that lets the RAG pipeline compile and run without
 /// any external dependency. Swap `embed(_:)` for a real model call when ready.
-public struct GeminiEmbeddingProvider {
+public struct GeminiEmbeddingProvider: Sendable {
     public init() {}
 
     /// Returns a JSON‑encoded `[Double]` representing the input text.

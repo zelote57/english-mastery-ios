@@ -16,12 +16,12 @@
 - [x] Persistence, deterministic Levenshtein partial-credit, placement routing, and drill-isolation unit tests
 
 ### 🎨 Milestone 2 — Main UI (without RAG)
-- [ ] `ModelGateView` (placeholder without real download)
-- [ ] `OnboardingView` (`"Start from Scratch"` vs `"Take Placement Test"`) & `PlacementTestView` (18 diagnostic questions without mid-test RAG sheets, marking `1...K-1` as `skippedPassed`)
-- [ ] `HomeView` with 9-phase skills list supporting all 4 states (`passed` `✅`, `skippedPassed` `⏭️`, `available` `🔵`, `locked` `🔒`)
-- [ ] `SkillDetailView` with 5-attempt history
-- [ ] `TestView` with 15-question shuffled flow and immediate wrong-answer sheet (`"Continue"` button) rendering the deterministic 3-heading Spanish fallback card (`### 💡 ¿Por qué no es correcta?`, `### 📘 Regla clave`, `### 🔍 Ejemplos prácticos`)
-- [ ] `FeedbackView` with official score summary, expandable 3-heading Spanish fallback cards, and `MistakeDrillView` (`"Practice Missed Questions"` isolated loop)
+- [x] `ModelGateView` (placeholder without real download)
+- [x] `OnboardingView` (`"Start from Scratch"` vs `"Take Placement Test"`) & `PlacementTestView` (18 diagnostic questions without mid-test RAG sheets, marking `1...K-1` as `skippedPassed`)
+- [x] `HomeView` with 9-phase skills list supporting all 4 states (`passed` `✅`, `skippedPassed` `⏭️`, `available` `🔵`, `locked` `🔒`)
+- [x] `SkillDetailView` with 5-attempt history
+- [x] `TestView` with 15-question shuffled flow and immediate wrong-answer sheet (`"Continue"` button) rendering the deterministic 3-heading Spanish fallback card (`### 💡 ¿Por qué no es correcta?`, `### 📘 Regla clave`, `### 🔍 Ejemplos prácticos`)
+- [x] `FeedbackView` with official score summary, expandable 3-heading Spanish fallback cards, and `MistakeDrillView` (`"Practice Missed Questions"` isolated loop)
 
 ### 🔍 Milestone 3 — RAG Pipeline
 - [ ] Markdown/PDF parser with PDFKit

@@ -4,6 +4,7 @@ struct HomeHeaderView: View {
     let userName: String
     let streakDays: Int
     let progressFraction: Double
+    let activePhase: Phase?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -18,6 +19,11 @@ struct HomeHeaderView: View {
                         .fontWeight(.semibold)
                         .accessibilityLabel("\(streakDays) day streak")
                 }
+            }
+            if let activePhase {
+                Text("Phase \(activePhase.title) — \(activePhase.cambridgeAlignment)")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
             ProgressView(value: progressFraction)
                 .tint(.blue)

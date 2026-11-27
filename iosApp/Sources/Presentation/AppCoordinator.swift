@@ -91,15 +91,83 @@ final class AppCoordinator {
         appState = .home
     }
 
+    func openSkill(_ skill: Skill) {
+        activeSkill = skill
+        errorMessage = nil
+        appState = .skillDetail
+    }
+
     func openTest(for skill: Skill) {
         activeSkill = skill
+        activeAttempt = nil
+        errorMessage = nil
         appState = .testInProgress
+    }
+
+    func completeSkillTest(submissions: [QuestionSubmission]) throws {
+        guard let user = currentUser, let skill = activeSkill,
+              submissions.count == 15,
+              Set(submissions.map(\.question.id)).count == 15,
+              submissions.allSatisfy({ $0.question.skillId == skill.id }) else {
+            throw AssessmentError.invalidAssessment
+        }
+        let userId = user.id
+        let skillId = skill.id
+        guard let userModel = try modelContext.fetch(FetchDescriptor<UserModel>(
+            predicate: #Predicate { $0.id == userId }
+        )).first,
+        let skillModel = try modelContext.fetch(FetchDescriptor<SkillModel>(
+            predicate: #Predicate { $0.id == skillId }
+        )).first else {
+            throw AssessmentError.missingProgress
+        }
+        let phaseModels = try modelContext.fetch(FetchDescriptor<PhaseModel>())
+        let outcome = EvaluateAttemptUseCase.evaluate(
+            user: user, skill: skill, phases: phases, skills: skills, submissions: submissions
+        )
+        userModel.update(from: outcome.updatedUser)
+        skillModel.update(from: outcome.updatedSkill)
+        let statuses = Dictionary(uniqueKeysWithValues: outcome.updatedPhases.map { ($0.id, $0.status.rawValue) })
+        for phase in phaseModels {
+            if let status = statuses[phase.id] { phase.status = status }
+        }
+        modelContext.insert(AttemptModel(from: outcome.attempt))
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            throw error
+        }
+        currentUser = outcome.updatedUser
+        phases = outcome.updatedPhases
+        skills = skills.map { $0.id == outcome.updatedSkill.id ? outcome.updatedSkill : $0 }
+        attempts.append(outcome.attempt)
+        activeSkill = outcome.updatedSkill
+        activeAttempt = outcome.attempt
+        appState = .reviewingFeedback
+    }
+
+    var nextSkill: Skill? {
+        guard let activeSkill else { return nil }
+        let ordered = phases.sorted { $0.order < $1.order }.flatMap { phase in
+            skills.filter { $0.phaseId == phase.id }.sorted { $0.skillCode < $1.skillCode }
+        }
+        guard let index = ordered.firstIndex(where: { $0.id == activeSkill.id }) else { return nil }
+        return ordered.dropFirst(index + 1).first { skill in
+            guard let phase = phases.first(where: { $0.id == skill.phaseId }) else { return false }
+            return skill.displayState(in: phase) != .locked
+        }
     }
 
     func returnHome() {
         activeSkill = nil
         activeAttempt = nil
         appState = .home
+    }
+
+    enum AssessmentError: Error {
+        case invalidAssessment
+        case missingProgress
     }
 
     // MARK: - SwiftData Sync Helpers

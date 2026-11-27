@@ -36,6 +36,6 @@ final class HomeViewModel {
     }
 
     func openSkill(_ skill: Skill) {
-        coordinator.openTest(for: skill)
+        coordinator.openSkill(skill)
     }
 }

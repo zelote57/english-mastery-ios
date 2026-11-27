@@ -14,7 +14,8 @@ struct HomeView: View {
                     HomeHeaderView(
                         userName: viewModel.user?.name ?? "Learner",
                         streakDays: viewModel.user?.streakDays ?? 0,
-                        progressFraction: viewModel.overallProgressFraction
+                        progressFraction: viewModel.overallProgressFraction,
+                        activePhase: viewModel.phases.first { $0.id == viewModel.user?.currentPhaseId }
                     )
                     .padding(.horizontal, 16)
                     .padding(.vertical, 20)

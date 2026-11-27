@@ -6,6 +6,7 @@ enum AppState: Equatable, Sendable {
     case onboarding
     case placementTest
     case home
+    case skillDetail
     case testInProgress
     case reviewingFeedback
     case mistakeDrill

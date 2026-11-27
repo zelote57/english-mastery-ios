@@ -3,18 +3,6 @@ import Foundation
 /// Ephemeral reinforcement session for `"Practice Missed Questions"`.
 /// Intentionally holds no references to `User`, `Phase`, `Skill`, or `Attempt` to enforce Drill Score Isolation.
 struct MistakeDrillUseCase: Equatable, Sendable {
-    // Existing properties …
-    
-    /// Retrieves RAG‑based feedback for the current question when the user gets it wrong.
-    /// Returns a concatenated string of the top‑K relevant chunks.
-    public func ragFeedback() async throws -> String? {
-        guard let current = currentQuestion else { return nil }
-        // Use the prompt (or the user answer placeholder) as the query.
-        // Here we simply pass the question prompt – in a real flow we could also pass the wrong answer.
-        let feedback = try await RAGFeedbackProvider.feedback(for: current.prompt)
-        return feedback.isEmpty ? nil : feedback
-    }
-
     private(set) var remainingQuestions: [Question]
     private(set) var completedCount: Int = 0
     let totalMissedCount: Int

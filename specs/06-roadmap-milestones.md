@@ -10,10 +10,10 @@
 - [x] Verify that the project builds empty on simulator
 
 ### 🧱 Milestone 1 — Data Models + SwiftData
-- [ ] Implement entities aligned with `04-data-models.json`: `User`, `Phase`, `Skill`, `Question`, `Attempt`, `AnswerRecord`
-- [ ] Configure `ModelContainer` and `ModelConfiguration`
-- [ ] Seed initial data (`Resources/seed-curriculum.json`): 9 phases (`A1` to `B2_ADV`), 29 skills, `>15` questions per skill, and 18 `isPlacementEligible` diagnostic questions (2 per phase)
-- [ ] Persistence, deterministic Levenshtein partial-credit, placement routing, and drill-isolation unit tests
+- [x] Implement entities aligned with `04-data-models.json`: `User`, `Phase`, `Skill`, `Question`, `Attempt`, `AnswerRecord`
+- [x] Configure `ModelContainer` and `ModelConfiguration`
+- [x] Seed initial data (`Resources/seed-curriculum.json`): 9 phases (`A1` to `B2_ADV`), 29 skills, `>15` questions per skill, and 18 `isPlacementEligible` diagnostic questions (2 per phase)
+- [x] Persistence, deterministic Levenshtein partial-credit, placement routing, and drill-isolation unit tests
 
 ### 🎨 Milestone 2 — Main UI (without RAG)
 - [ ] `ModelGateView` (placeholder without real download)

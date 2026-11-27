@@ -1,47 +1,37 @@
 import Foundation
 import SwiftData
 
-/// Reads the bundled JSON seed file and populates the SwiftData store with
-/// `Chunk` objects (and, later, Phase/Skill/Question models). This runs once at
-/// app launch if the store is empty.
-public struct CurriculumSeeder {
-    private let bundle = Bundle.main
-    private let seedFileName = "seed-curriculum"
-    private let seedFileExtension = "json"
-
-    public init() {}
-
-    /// Load the JSON file, decode into simple structs, and insert chunks.
-    public func seedIfNeeded() async throws {
-        // Obtain a context from the shared container.
-        let context = DataLayer.container.mainContext
-        // Simple guard – if any Chunk already exists we assume seeding was done.
-        if try context.fetchCount(FetchDescriptor<Chunk>()) > 0 { return }
-
-        guard let url = bundle.url(forResource: seedFileName, withExtension: seedFileExtension) else {
-            throw SeedError.fileNotFound
-        }
-        let data = try Data(contentsOf: url)
-        let seed = try JSONDecoder().decode(SeedRoot.self, from: data)
-
-        // Insert phases, skills, questions (as plain structs – not SwiftData models yet).
-        // For now we only create Chunk entries for each question.
-        for question in seed.questions {
-            let text = "\(question.prompt) – Answer: \(question.correctAnswer)"
-            // Insert chunk asynchronously – embedder uses async Gemini call.
-            try await VectorStore.insertChunk(text: text, questionId: question.id, in: context)
-        }
+/// Loads `seed-curriculum.json` on first launch and populates phases, skills, questions, and default user.
+@MainActor
+enum CurriculumSeeder {
+    enum SeedError: Error, Equatable {
+        case resourceNotFound(String)
+        case invalidCurriculum(String)
     }
 
-    // MARK: - Seed data structures (mirroring the JSON layout)
-    struct SeedRoot: Codable {
-        let phases: [PhaseSeed]
-        let skills: [SkillSeed]
-        let questions: [QuestionSeed]
+    private struct SeedPayload: Decodable {
+        let phases: [SeedPhase]
+        let skills: [SeedSkill]
+        let questions: [SeedQuestion]
     }
-    struct PhaseSeed: Codable { let id: UUID; let level: String; let title: String; let cambridgeAlignment: String; let order: Int; let status: String }
-    struct SkillSeed: Codable { let id: UUID; let skillCode: String; let topic: String; let phaseId: UUID }
-    struct QuestionSeed: Codable {
+
+    private struct SeedPhase: Decodable {
+        let id: UUID
+        let level: String
+        let title: String
+        let cambridgeAlignment: String
+        let order: Int
+        let status: String
+    }
+
+    private struct SeedSkill: Decodable {
+        let id: UUID
+        let skillCode: String
+        let topic: String
+        let phaseId: UUID
+    }
+
+    private struct SeedQuestion: Decodable {
         let id: UUID
         let skillId: UUID
         let prompt: String
@@ -52,5 +42,101 @@ public struct CurriculumSeeder {
         let isPlacementEligible: Bool
     }
 
-    enum SeedError: Error { case fileNotFound }
+    static func seedIfNeeded(
+        in context: ModelContext,
+        bundle: Bundle = .main,
+        resourceName: String = "seed-curriculum"
+    ) throws {
+        let existingPhaseCount = try context.fetchCount(FetchDescriptor<PhaseModel>())
+        guard existingPhaseCount == 0 else { return }
+
+        guard let url = bundle.url(forResource: resourceName, withExtension: "json")
+            ?? bundle.url(forResource: resourceName, withExtension: "json", subdirectory: "Resources") else {
+            throw SeedError.resourceNotFound("\(resourceName).json")
+        }
+        let data = try Data(contentsOf: url)
+        try seed(from: data, in: context)
+    }
+
+    static func seed(from jsonData: Data, in context: ModelContext) throws {
+        let existingPhaseCount = try context.fetchCount(FetchDescriptor<PhaseModel>())
+        guard existingPhaseCount == 0 else { return }
+
+        let payload = try JSONDecoder().decode(SeedPayload.self, from: jsonData)
+        guard !payload.phases.isEmpty else {
+            throw SeedError.invalidCurriculum("Curriculum seed contains no phases.")
+        }
+
+        var phasesById: [UUID: PhaseModel] = [:]
+        for item in payload.phases {
+            guard PhaseLevel(rawValue: item.level) != nil else {
+                throw SeedError.invalidCurriculum("Invalid phase level: \(item.level)")
+            }
+            guard PhaseStatus(rawValue: item.status) != nil else {
+                throw SeedError.invalidCurriculum("Invalid phase status: \(item.status)")
+            }
+            let phase = PhaseModel(
+                id: item.id,
+                level: item.level,
+                title: item.title,
+                cambridgeAlignment: item.cambridgeAlignment,
+                order: item.order,
+                status: item.status
+            )
+            context.insert(phase)
+            phasesById[phase.id] = phase
+        }
+
+        var skillsById: [UUID: SkillModel] = [:]
+        for item in payload.skills {
+            guard let phase = phasesById[item.phaseId] else {
+                throw SeedError.invalidCurriculum("Skill \(item.skillCode) references unknown phase \(item.phaseId)")
+            }
+            let skill = SkillModel(
+                id: item.id,
+                skillCode: item.skillCode,
+                topic: item.topic,
+                phaseId: item.phaseId
+            )
+            context.insert(skill)
+            // Link after both parent and child belong to the same ModelContext.
+            skill.phase = phase
+            skillsById[skill.id] = skill
+        }
+
+        for item in payload.questions {
+            guard let skill = skillsById[item.skillId] else {
+                throw SeedError.invalidCurriculum("Question \(item.id) references unknown skill \(item.skillId)")
+            }
+            guard QuestionType(rawValue: item.questionType) != nil else {
+                throw SeedError.invalidCurriculum("Invalid questionType: \(item.questionType)")
+            }
+            let question = QuestionModel(
+                id: item.id,
+                skillId: item.skillId,
+                prompt: item.prompt,
+                correctAnswer: item.correctAnswer,
+                acceptedSynonyms: item.acceptedSynonyms,
+                distractors: item.distractors,
+                questionType: item.questionType,
+                isPlacementEligible: item.isPlacementEligible
+            )
+            context.insert(question)
+            question.skill = skill
+        }
+
+        if try context.fetchCount(FetchDescriptor<UserModel>()) == 0 {
+            guard let initialPhase = payload.phases.min(by: { $0.order < $1.order }) else {
+                throw SeedError.invalidCurriculum("Curriculum seed contains no phases.")
+            }
+            let defaultUser = UserModel(
+                name: "Learner",
+                currentPhaseId: initialPhase.id,
+                hasCompletedOnboarding: false
+            )
+            context.insert(defaultUser)
+        }
+
+        try context.save()
+    }
 }

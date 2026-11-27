@@ -1,16 +1,25 @@
-// EnglishMasteryApp.swift
-// Application entry point
-
 import SwiftUI
 import SwiftData
 
 @main
 struct EnglishMasteryApp: App {
+    private let modelContainer: ModelContainer
+
+    init() {
+        do {
+            let container = try DataLayer.makeModelContainer()
+            try CurriculumSeeder.seedIfNeeded(in: container.mainContext)
+            self.modelContainer = container
+        } catch {
+            fatalError("Failed to configure SwiftData persistence: \(error)")
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()
         }
-        // TODO (Milestone 1): Attach .modelContainer(for: [...]) once SwiftData @Model entities are added
+        .modelContainer(modelContainer)
     }
 }
 

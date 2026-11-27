@@ -47,7 +47,8 @@ final class AppCoordinator {
         do {
             let outcome = try PlacementEvaluationUseCase.startFromScratch(user: user, phases: phases)
             try persistPlacementOutcome(outcome)
-            try refreshSnapshots()
+            currentUser = outcome.updatedUser
+            phases = outcome.updatedPhases
             errorMessage = nil
             appState = .home
         } catch {
@@ -59,7 +60,7 @@ final class AppCoordinator {
     func beginPlacementTest() {
         let phaseOrderById = Dictionary(uniqueKeysWithValues: phases.map { ($0.id, $0.order) })
         let phaseIdBySkillId = Dictionary(uniqueKeysWithValues: skills.map { ($0.id, $0.phaseId) })
-        placementQuestions = questions
+        let selected = questions
             .filter(\.isPlacementEligible)
             .sorted { lhs, rhs in
                 let lhsOrder = phaseOrderById[phaseIdBySkillId[lhs.skillId] ?? UUID()] ?? 0
@@ -67,6 +68,24 @@ final class AppCoordinator {
                 if lhsOrder != rhsOrder { return lhsOrder < rhsOrder }
                 return lhs.id.uuidString < rhs.id.uuidString
             }
+        let phaseIds = Set(phases.map(\.id))
+        var counts: [UUID: Int] = [:]
+        for question in selected {
+            guard let phaseId = phaseIdBySkillId[question.skillId], phaseIds.contains(phaseId) else {
+                errorMessage = "The placement questions are invalid. Please try again later."
+                return
+            }
+            counts[phaseId, default: 0] += 1
+        }
+        guard phases.count == PhaseLevel.allCases.count,
+              Set(phases.map(\.level)).count == PhaseLevel.allCases.count,
+              selected.count == phases.count * 2,
+              Set(selected.map(\.id)).count == selected.count,
+              phases.allSatisfy({ counts[$0.id] == 2 }) else {
+            errorMessage = "The placement questions are incomplete. Please try again later."
+            return
+        }
+        placementQuestions = selected
         errorMessage = nil
         appState = .placementTest
     }
@@ -76,6 +95,12 @@ final class AppCoordinator {
         guard let user = currentUser else {
             throw PlacementError.emptyPhases
         }
+        guard !user.hasCompletedOnboarding,
+              submissions.count == placementQuestions.count,
+              Set(submissions.map(\.question.id)).count == placementQuestions.count,
+              submissions.allSatisfy({ placementQuestions.contains($0.question) }) else {
+            throw PlacementError.invalidQuestions
+        }
         let outcome = try PlacementEvaluationUseCase.evaluatePlacement(
             user: user,
             phases: phases,
@@ -83,7 +108,9 @@ final class AppCoordinator {
             submissions: submissions
         )
         try persistPlacementOutcome(outcome)
-        try refreshSnapshots()
+        currentUser = outcome.updatedUser
+        phases = outcome.updatedPhases
+        if let attempt = outcome.attempt { attempts.append(attempt) }
         return outcome
     }
 
@@ -168,28 +195,43 @@ final class AppCoordinator {
     enum AssessmentError: Error {
         case invalidAssessment
         case missingProgress
+        case invalidStoredData
     }
 
     // MARK: - SwiftData Sync Helpers
 
     private func refreshSnapshots() throws {
-        currentUser = try modelContext.fetch(FetchDescriptor<UserModel>()).first?.toDomain()
-        phases = try modelContext.fetch(FetchDescriptor<PhaseModel>(sortBy: [SortDescriptor(\.order)]))
-            .compactMap { $0.toDomain() }
-        skills = try modelContext.fetch(FetchDescriptor<SkillModel>(sortBy: [SortDescriptor(\.skillCode)]))
+        let user = try modelContext.fetch(FetchDescriptor<UserModel>()).first?.toDomain()
+        let phaseModels = try modelContext.fetch(FetchDescriptor<PhaseModel>(sortBy: [SortDescriptor(\.order)]))
+        let questionModels = try modelContext.fetch(FetchDescriptor<QuestionModel>())
+        let attemptModels = try modelContext.fetch(FetchDescriptor<AttemptModel>(sortBy: [SortDescriptor(\.timestamp)]))
+        let decodedPhases = phaseModels.compactMap { $0.toDomain() }
+        let decodedQuestions = questionModels.compactMap { $0.toDomain() }
+        let decodedAttempts = attemptModels.compactMap { $0.toDomain() }
+        guard decodedPhases.count == phaseModels.count, decodedQuestions.count == questionModels.count,
+              decodedAttempts.count == attemptModels.count else { throw AssessmentError.invalidStoredData }
+        let decodedSkills = try modelContext.fetch(FetchDescriptor<SkillModel>(sortBy: [SortDescriptor(\.skillCode)]))
             .map { $0.toDomain() }
-        questions = try modelContext.fetch(FetchDescriptor<QuestionModel>())
-            .compactMap { $0.toDomain() }
-        attempts = try modelContext.fetch(FetchDescriptor<AttemptModel>(sortBy: [SortDescriptor(\.timestamp)]))
-            .compactMap { $0.toDomain() }
+        currentUser = user
+        phases = decodedPhases
+        skills = decodedSkills
+        questions = decodedQuestions
+        attempts = decodedAttempts
     }
 
     private func persistPlacementOutcome(_ outcome: PlacementOutcome) throws {
-        if let userModel = try modelContext.fetch(FetchDescriptor<UserModel>()).first {
-            userModel.update(from: outcome.updatedUser)
+        let userId = outcome.updatedUser.id
+        guard let userModel = try modelContext.fetch(FetchDescriptor<UserModel>(
+            predicate: #Predicate { $0.id == userId }
+        )).first else {
+            throw AssessmentError.missingProgress
         }
         let statusById = Dictionary(uniqueKeysWithValues: outcome.updatedPhases.map { ($0.id, $0.status.rawValue) })
         let phaseModels = try modelContext.fetch(FetchDescriptor<PhaseModel>())
+        guard Set(phaseModels.map(\.id)) == Set(statusById.keys) else {
+            throw AssessmentError.missingProgress
+        }
+        userModel.update(from: outcome.updatedUser)
         for model in phaseModels {
             if let status = statusById[model.id] {
                 model.status = status
@@ -198,6 +240,11 @@ final class AppCoordinator {
         if let attempt = outcome.attempt {
             modelContext.insert(AttemptModel(from: attempt))
         }
-        try modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            throw error
+        }
     }
 }

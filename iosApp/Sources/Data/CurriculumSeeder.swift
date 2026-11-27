@@ -1,7 +1,6 @@
 import Foundation
 import SwiftData
 
-/// Loads `seed-curriculum.json` on first launch and populates phases, skills, questions, and default user.
 @MainActor
 enum CurriculumSeeder {
     enum SeedError: Error, Equatable {
@@ -10,6 +9,7 @@ enum CurriculumSeeder {
     }
 
     private struct SeedPayload: Decodable {
+        let version: Int?
         let phases: [SeedPhase]
         let skills: [SeedSkill]
         let questions: [SeedQuestion]
@@ -47,9 +47,6 @@ enum CurriculumSeeder {
         bundle: Bundle = .main,
         resourceName: String = "seed-curriculum"
     ) throws {
-        let existingPhaseCount = try context.fetchCount(FetchDescriptor<PhaseModel>())
-        guard existingPhaseCount == 0 else { return }
-
         guard let url = bundle.url(forResource: resourceName, withExtension: "json")
             ?? bundle.url(forResource: resourceName, withExtension: "json", subdirectory: "Resources") else {
             throw SeedError.resourceNotFound("\(resourceName).json")
@@ -59,14 +56,28 @@ enum CurriculumSeeder {
     }
 
     static func seed(from jsonData: Data, in context: ModelContext) throws {
-        let existingPhaseCount = try context.fetchCount(FetchDescriptor<PhaseModel>())
-        guard existingPhaseCount == 0 else { return }
-
         let payload = try JSONDecoder().decode(SeedPayload.self, from: jsonData)
+        guard (1...2).contains(payload.version ?? 1) else {
+            throw SeedError.invalidCurriculum("Unsupported curriculum version.")
+        }
         guard !payload.phases.isEmpty else {
             throw SeedError.invalidCurriculum("Curriculum seed contains no phases.")
         }
 
+        if try context.fetchCount(FetchDescriptor<PhaseModel>()) > 0 {
+            try reconcile(payload, in: context)
+            return
+        }
+
+        do {
+            try insert(payload, in: context)
+        } catch {
+            context.rollback()
+            throw error
+        }
+    }
+
+    private static func insert(_ payload: SeedPayload, in context: ModelContext) throws {
         var phasesById: [UUID: PhaseModel] = [:]
         for item in payload.phases {
             guard PhaseLevel(rawValue: item.level) != nil else {
@@ -138,5 +149,63 @@ enum CurriculumSeeder {
         }
 
         try context.save()
+    }
+
+    private static func reconcile(_ payload: SeedPayload, in context: ModelContext) throws {
+        let phases = try context.fetch(FetchDescriptor<PhaseModel>())
+        let skills = try context.fetch(FetchDescriptor<SkillModel>())
+        let questions = try context.fetch(FetchDescriptor<QuestionModel>())
+        guard try context.fetchCount(FetchDescriptor<UserModel>()) == 1 else {
+            throw SeedError.invalidCurriculum("Existing learner profile is missing or duplicated.")
+        }
+        let phasesById = Dictionary(uniqueKeysWithValues: phases.map { ($0.id, $0) })
+        let skillsById = Dictionary(uniqueKeysWithValues: skills.map { ($0.id, $0) })
+        let questionsById = Dictionary(uniqueKeysWithValues: questions.map { ($0.id, $0) })
+
+        do {
+            for item in payload.phases {
+                guard let phase = phasesById[item.id], phase.level == item.level,
+                      PhaseLevel(rawValue: item.level) != nil, PhaseStatus(rawValue: item.status) != nil else {
+                    throw SeedError.invalidCurriculum("Existing phase does not match curriculum: \(item.id)")
+                }
+                if phase.title != item.title { phase.title = item.title }
+                if phase.cambridgeAlignment != item.cambridgeAlignment { phase.cambridgeAlignment = item.cambridgeAlignment }
+                if phase.order != item.order { phase.order = item.order }
+            }
+            for item in payload.skills {
+                guard let skill = skillsById[item.id], skill.phaseId == item.phaseId,
+                      phasesById[item.phaseId] != nil else {
+                    throw SeedError.invalidCurriculum("Existing skill does not match curriculum: \(item.id)")
+                }
+                if skill.skillCode != item.skillCode { skill.skillCode = item.skillCode }
+                if skill.topic != item.topic { skill.topic = item.topic }
+            }
+            for item in payload.questions {
+                guard let type = QuestionType(rawValue: item.questionType),
+                      let skill = skillsById[item.skillId] else {
+                    throw SeedError.invalidCurriculum("Invalid question: \(item.id)")
+                }
+                let updated = Question(
+                    id: item.id, skillId: item.skillId, prompt: item.prompt,
+                    correctAnswer: item.correctAnswer, acceptedSynonyms: item.acceptedSynonyms,
+                    distractors: item.distractors, questionType: type,
+                    isPlacementEligible: item.isPlacementEligible
+                )
+                if let question = questionsById[item.id] {
+                    guard question.skillId == item.skillId else {
+                        throw SeedError.invalidCurriculum("Existing question has a different skill: \(item.id)")
+                    }
+                    if question.toDomain() != updated { question.updateContent(from: updated) }
+                } else {
+                    let question = QuestionModel(from: updated)
+                    context.insert(question)
+                    question.skill = skill
+                }
+            }
+            if context.hasChanges { try context.save() }
+        } catch {
+            context.rollback()
+            throw error
+        }
     }
 }

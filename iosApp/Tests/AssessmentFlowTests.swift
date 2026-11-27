@@ -4,6 +4,40 @@ import XCTest
 
 @MainActor
 final class AssessmentFlowTests: XCTestCase {
+    func testIncompletePlacementDoesNotStartOrPersist() throws {
+        let container = try DataLayer.makeModelContainer(inMemory: true)
+        try CurriculumSeeder.seedIfNeeded(in: container.mainContext)
+        let coordinator = AppCoordinator(modelContext: container.mainContext)
+        coordinator.loadInitialState()
+        let id = try XCTUnwrap(coordinator.questions.first(where: \.isPlacementEligible)).id
+        coordinator.questions.removeAll { $0.id == id }
+        coordinator.beginPlacementTest()
+        XCTAssertEqual(coordinator.appState, .onboarding)
+        XCTAssertNotNil(coordinator.errorMessage)
+        XCTAssertFalse(try XCTUnwrap(coordinator.currentUser).hasCompletedOnboarding)
+        XCTAssertEqual(try container.mainContext.fetchCount(FetchDescriptor<AttemptModel>()), 0)
+    }
+
+    func testInvalidPlacementSubmissionsCannotPersist() throws {
+        let container = try DataLayer.makeModelContainer(inMemory: true)
+        try CurriculumSeeder.seedIfNeeded(in: container.mainContext)
+        let coordinator = AppCoordinator(modelContext: container.mainContext)
+        coordinator.loadInitialState()
+        coordinator.beginPlacementTest()
+        let first = try XCTUnwrap(coordinator.placementQuestions.first)
+        let duplicate = Array(repeating: QuestionSubmission(question: first, userAnswer: first.correctAnswer), count: 18)
+        XCTAssertThrowsError(try coordinator.completePlacementTest(submissions: duplicate))
+        XCTAssertFalse(try XCTUnwrap(coordinator.currentUser).hasCompletedOnboarding)
+        XCTAssertEqual(try container.mainContext.fetchCount(FetchDescriptor<AttemptModel>()), 0)
+        let valid = coordinator.placementQuestions.map {
+            QuestionSubmission(question: $0, userAnswer: $0.correctAnswer)
+        }
+        _ = try coordinator.completePlacementTest(submissions: valid)
+        XCTAssertTrue(try XCTUnwrap(coordinator.currentUser).hasCompletedOnboarding)
+        XCTAssertThrowsError(try coordinator.completePlacementTest(submissions: valid))
+        XCTAssertEqual(try container.mainContext.fetchCount(FetchDescriptor<AttemptModel>()), 1)
+    }
+
     func testAssessmentPersistsFeedbackAndDrillDoesNotChangeProgress() throws {
         let container = try DataLayer.makeModelContainer(inMemory: true)
         try CurriculumSeeder.seedIfNeeded(in: container.mainContext)

@@ -3,6 +3,7 @@ import Foundation
 /// Errors raised when onboarding or placement preconditions cannot be satisfied.
 enum PlacementError: Error, Equatable, Sendable {
     case emptyPhases
+    case invalidQuestions
 }
 
 /// Resulting phase assignments and optional placement `Attempt` after onboarding routing.
@@ -49,6 +50,28 @@ enum PlacementEvaluationUseCase: Sendable {
         var ordered = phases.sorted { $0.order < $1.order }
         guard !ordered.isEmpty else { throw PlacementError.emptyPhases }
 
+        let phaseBySkillId = Dictionary(
+            skills.map { ($0.id, $0.phaseId) },
+            uniquingKeysWith: { first, _ in first }
+        )
+        let phaseIds = Set(ordered.map(\.id))
+        var counts: [UUID: Int] = [:]
+        guard ordered.count == PhaseLevel.allCases.count,
+              Set(ordered.map(\.level)).count == PhaseLevel.allCases.count,
+              submissions.count == ordered.count * 2,
+              Set(submissions.map(\.question.id)).count == submissions.count else {
+            throw PlacementError.invalidQuestions
+        }
+        for submission in submissions {
+            guard submission.question.isPlacementEligible,
+                  let phaseId = phaseBySkillId[submission.question.skillId],
+                  phaseIds.contains(phaseId) else {
+                throw PlacementError.invalidQuestions
+            }
+            counts[phaseId, default: 0] += 1
+        }
+        guard ordered.allSatisfy({ counts[$0.id] == 2 }) else { throw PlacementError.invalidQuestions }
+
         // Placement test suppresses mid-test RAG sheets, so drop any diagnostic feedback.
         let sanitizedSubmissions = submissions.map {
             QuestionSubmission(question: $0.question, userAnswer: $0.userAnswer, ragFeedback: nil)
@@ -60,11 +83,6 @@ enum PlacementEvaluationUseCase: Sendable {
             attemptType: .placementTest,
             timestamp: now,
             attemptId: attemptId
-        )
-
-        let phaseBySkillId = Dictionary(
-            skills.map { ($0.id, $0.phaseId) },
-            uniquingKeysWith: { first, _ in first }
         )
 
         var pointsByPhaseId: [UUID: Double] = [:]

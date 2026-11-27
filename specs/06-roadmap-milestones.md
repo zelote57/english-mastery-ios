@@ -14,6 +14,7 @@
 - [x] Configure `ModelContainer` and `ModelConfiguration`
 - [x] Seed initial data (`Resources/seed-curriculum.json`): 9 phases (`A1` to `B2_ADV`), 29 skills, `>15` questions per skill, and 18 `isPlacementEligible` diagnostic questions (2 per phase)
 - [x] Persistence, deterministic Levenshtein partial-credit, placement routing, and drill-isolation unit tests
+- [x] Reconcile versioned bundled curriculum by stable IDs without resetting learner progress or historical scores
 
 ### 🎨 Milestone 2 — Main UI (without RAG)
 - [x] `ModelGateView` (placeholder without real download)
@@ -30,6 +31,7 @@
 - [x] In-memory VectorStore with cosine similarity search
 - [x] Pipeline unit tests
 - [ ] Complete the grammar, Spanish-interference, and prompt-template knowledge base for all 29 skills and 9 phases
+- [ ] Evaluate retrieval relevance against the completed corpus and validate on a physical device
 
 ### 🤖 Milestone 4 — LLM Integration
 - [ ] Integrate MLX Swift (or MediaPipe) for on-device inference (`Gemma` / `Phi-3-mini`)
@@ -49,3 +51,8 @@
 > **P0:** Milestones 0-2 (functional app without AI)
 > **P1:** Milestones 3-4 (RAG + on-device LLM)
 > **P2:** Milestone 5 (polish and launch)
+
+Curriculum version 2 corrects individual answer data. Existing installations reconcile bundled
+content transactionally on launch; attempts and their original scores remain unchanged.
+Historical answers reference question IDs rather than question-text snapshots, so later
+content edits can change the wording displayed with an older attempt.

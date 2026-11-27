@@ -51,16 +51,10 @@ final class QuestionModel {
         )
     }
 
-    var acceptedSynonyms: [String] {
-        Self.decodeStringArray(acceptedSynonymsJSON)
-    }
-
-    var distractors: [String] {
-        Self.decodeStringArray(distractorsJSON)
-    }
-
     func toDomain() -> Question? {
-        guard let parsedType = QuestionType(rawValue: questionType) else {
+        guard let parsedType = QuestionType(rawValue: questionType),
+              let acceptedSynonyms = Self.decodeStringArray(acceptedSynonymsJSON),
+              let distractors = Self.decodeStringArray(distractorsJSON) else {
             return nil
         }
         return Question(
@@ -83,10 +77,19 @@ final class QuestionModel {
         return json
     }
 
-    private static func decodeStringArray(_ json: String) -> [String] {
+    func updateContent(from question: Question) {
+        prompt = question.prompt
+        correctAnswer = question.correctAnswer
+        acceptedSynonymsJSON = Self.encodeStringArray(question.acceptedSynonyms)
+        distractorsJSON = Self.encodeStringArray(question.distractors)
+        questionType = question.questionType.rawValue
+        isPlacementEligible = question.isPlacementEligible
+    }
+
+    private static func decodeStringArray(_ json: String) -> [String]? {
         guard let data = json.data(using: .utf8),
               let values = try? JSONDecoder().decode([String].self, from: data) else {
-            return []
+            return nil
         }
         return values
     }

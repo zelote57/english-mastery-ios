@@ -1,4 +1,5 @@
 import PDFKit
+import SwiftData
 import UIKit
 import XCTest
 @testable import EnglishMastery
@@ -7,7 +8,7 @@ import XCTest
 final class RAGPipelineTests: XCTestCase {
     func testBundledCorpusLoadsMetadataAndCanBeSearched() async throws {
         let chunks = try KnowledgeCorpus.load()
-        XCTAssertTrue(chunks.contains { $0.level == .a1 && $0.topic == "Verb to be" })
+        XCTAssertTrue(chunks.contains { $0.level == .a1 && $0.topic == "Verb \"to be\"" })
         XCTAssertTrue(chunks.contains { $0.level == .a2Adv && $0.topic.contains("Prepositions") })
         XCTAssertTrue(chunks.allSatisfy { !$0.content.isEmpty && !$0.sourceFile.isEmpty })
 
@@ -16,6 +17,22 @@ final class RAGPipelineTests: XCTestCase {
         let results = try await index.search("prepositions", level: .a2Adv, topic: "prepositions")
         XCTAssertFalse(results.isEmpty)
         XCTAssertTrue(results.allSatisfy { $0.level == .a2Adv && $0.topic.contains("Prepositions") })
+    }
+
+    func testBundledTopicsMatchSeededSkills() async throws {
+        let container = try DataLayer.makeModelContainer(inMemory: true)
+        try CurriculumSeeder.seedIfNeeded(in: container.mainContext)
+        let skills = try container.mainContext.fetch(FetchDescriptor<SkillModel>())
+        let phases = try container.mainContext.fetch(FetchDescriptor<PhaseModel>())
+        let chunks = try KnowledgeCorpus.load()
+        let index = KnowledgeIndex(embedding: TestEmbedding())
+        try await index.index(chunks)
+        for code in ["A1-02", "A2_ADV-01"] {
+            let skill = try XCTUnwrap(skills.first { $0.skillCode == code })
+            let phase = try XCTUnwrap(phases.first { $0.id == skill.phaseId }?.toDomain())
+            let results = try await index.search(skill.topic, level: phase.level, topic: skill.topic)
+            XCTAssertFalse(results.isEmpty, "Missing indexed topic for \(code): \(skill.topic)")
+        }
     }
 
     func testChunkingPreservesParagraphsAndMetadata() {
@@ -99,6 +116,18 @@ final class RAGPipelineTests: XCTestCase {
             XCTAssertTrue(vector.contains { $0 != 0 })
         } catch NaturalLanguageEmbedding.EmbeddingError.unavailable {
             throw XCTSkip("English word embeddings are not available on this simulator.")
+        }
+
+        func testNativeEmbeddingSearchesBundledTopicWhenAvailable() async throws {
+            let index = KnowledgeIndex()
+            do {
+                try await index.index(KnowledgeCorpus.load())
+                let results = try await index.search("verb to be grammar", level: .a1, topic: "Verb \"to be\"")
+                XCTAssertFalse(results.isEmpty)
+                XCTAssertTrue(results.allSatisfy { $0.topic == "Verb \"to be\"" })
+            } catch NaturalLanguageEmbedding.EmbeddingError.unavailable {
+                throw XCTSkip("English word embeddings are not available on this simulator.")
+            }
         }
     }
 }

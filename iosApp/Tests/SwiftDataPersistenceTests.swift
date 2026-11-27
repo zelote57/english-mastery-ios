@@ -230,4 +230,82 @@ final class SwiftDataPersistenceTests: XCTestCase {
             )
         }
     }
+
+    func testCurriculumUpdatePreservesProgressAndHistoricalAnswers() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        try CurriculumSeeder.seedIfNeeded(in: context)
+        let user = try XCTUnwrap(context.fetch(FetchDescriptor<UserModel>()).first)
+        let phases = try context.fetch(FetchDescriptor<PhaseModel>(sortBy: [SortDescriptor(\.order)]))
+        let question = try XCTUnwrap(context.fetch(FetchDescriptor<QuestionModel>()).first {
+            $0.correctAnswer == "Madrid is bigger than Seville"
+        })
+        let skill = try XCTUnwrap(question.skill)
+        let originalId = question.id
+        user.hasCompletedOnboarding = true
+        user.currentPhaseId = phases[1].id
+        phases[0].status = PhaseStatus.completed.rawValue
+        phases[1].status = PhaseStatus.available.rawValue
+        skill.isPassed = true
+        skill.bestScore = 0.9
+        question.acceptedSynonymsJSON = "[]"
+        let attemptId = UUID()
+        let record = AnswerRecord(attemptId: attemptId, questionId: originalId, userAnswer: "Madrid is larger than Seville", pointsEarned: 0)
+        let attempt = Attempt(id: attemptId, userId: user.id, skillId: skill.id, score: 0,
+                              earnedPoints: 0, totalQuestions: 1, correctAnswers: 0, answers: [record])
+        context.insert(AttemptModel(from: attempt))
+        try context.save()
+
+        try CurriculumSeeder.seedIfNeeded(in: context)
+        try CurriculumSeeder.seedIfNeeded(in: context)
+        let readContext = ModelContext(container)
+        let savedUser = try XCTUnwrap(readContext.fetch(FetchDescriptor<UserModel>()).first)
+        let savedQuestion = try XCTUnwrap(readContext.fetch(FetchDescriptor<QuestionModel>()).first { $0.id == originalId })
+        let savedSkill = try XCTUnwrap(savedQuestion.skill)
+        let savedAttempt = try XCTUnwrap(readContext.fetch(FetchDescriptor<AttemptModel>()).first?.toDomain())
+        XCTAssertTrue(savedUser.hasCompletedOnboarding)
+        XCTAssertEqual(savedUser.currentPhaseId, phases[1].id)
+        XCTAssertEqual(try readContext.fetch(FetchDescriptor<PhaseModel>(sortBy: [SortDescriptor(\.order)]))[0].status, "completed")
+        XCTAssertTrue(savedSkill.isPassed)
+        XCTAssertEqual(savedSkill.bestScore, 0.9)
+        XCTAssertEqual(savedQuestion.skillId, skill.id)
+        let corrected = try XCTUnwrap(savedQuestion.toDomain())
+        XCTAssertTrue(corrected.acceptedSynonyms.contains("Madrid is larger than Seville"))
+        XCTAssertEqual(ScoringEngine.grade(answer: "Madrid is larger than Seville", for: corrected).pointsEarned, 1)
+        XCTAssertEqual(savedAttempt.id, attemptId)
+        XCTAssertEqual(savedAttempt.answers.first?.questionId, originalId)
+        XCTAssertEqual(savedAttempt.answers.first?.pointsEarned, 0)
+        XCTAssertEqual(try readContext.fetchCount(FetchDescriptor<QuestionModel>()), 464)
+        XCTAssertEqual(try readContext.fetchCount(FetchDescriptor<AttemptModel>()), 1)
+    }
+
+    func testCorruptQuestionDataStopsSnapshotLoading() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        try CurriculumSeeder.seedIfNeeded(in: context)
+        let question = try XCTUnwrap(context.fetch(FetchDescriptor<QuestionModel>()).first)
+        question.acceptedSynonymsJSON = "invalid"
+        try context.save()
+        XCTAssertNil(question.toDomain())
+        let coordinator = AppCoordinator(modelContext: context)
+        coordinator.loadInitialState()
+        XCTAssertEqual(coordinator.modelGateStatus, .error("Failed to load saved progress."))
+        XCTAssertTrue(coordinator.questions.isEmpty)
+    }
+
+    func testFailedCurriculumUpdateRollsBackEarlierChanges() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        try CurriculumSeeder.seedIfNeeded(in: context)
+        let phase = try XCTUnwrap(context.fetch(FetchDescriptor<PhaseModel>()).first)
+        let question = try XCTUnwrap(context.fetch(FetchDescriptor<QuestionModel>()).first)
+        phase.title = "Old title"
+        question.skillId = UUID()
+        try context.save()
+        XCTAssertThrowsError(try CurriculumSeeder.seedIfNeeded(in: context))
+        let fresh = ModelContext(container)
+        let phaseId = phase.id
+        let saved = try XCTUnwrap(fresh.fetch(FetchDescriptor<PhaseModel>()).first { $0.id == phaseId })
+        XCTAssertEqual(saved.title, "Old title")
+    }
 }

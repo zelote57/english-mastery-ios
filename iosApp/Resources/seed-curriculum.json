@@ -1,4 +1,5 @@
 {
+  "version": 2,
   "phases": [
     {
       "id": "5ff25c1c-8f32-5405-bbe4-9bc1ade7dfa5",
@@ -2220,7 +2221,7 @@
       "skillId": "8c1700fa-5119-5bca-87ef-a8b9dbf62a30",
       "prompt": "Translate into English: \"Madrid es más grande que Sevilla.\"",
       "correctAnswer": "Madrid is bigger than Seville",
-      "acceptedSynonyms": [],
+      "acceptedSynonyms": ["Madrid is larger than Seville"],
       "distractors": [],
       "questionType": "translation",
       "isPlacementEligible": false
@@ -2925,9 +2926,9 @@
       "correctAnswer": "ever",
       "acceptedSynonyms": [],
       "distractors": [
-        "never",
-        "yet",
-        "already"
+        "ago",
+        "since",
+        "every"
       ],
       "questionType": "multipleChoice",
       "isPlacementEligible": true

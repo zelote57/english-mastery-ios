@@ -91,7 +91,7 @@ final class AssessmentFlowTests: XCTestCase {
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<AttemptModel>()), 1)
     }
 
-    func testPartialAnswerShowsHintAndSaveFailureCanBeRetried() throws {
+    func testTypoShowsFeedbackAndSaveFailureCanBeRetried() throws {
         let skill = Skill(skillCode: "A1-01", topic: "Pronouns", phaseId: UUID())
         let bank = (0..<15).map { index in
             Question(skillId: skill.id, prompt: "Question \(index)", correctAnswer: "worked", questionType: .fillBlank)
@@ -99,7 +99,9 @@ final class AssessmentFlowTests: XCTestCase {
         let viewModel = TestViewModel(skill: skill, questions: bank, attempts: [])
         viewModel.inputController.textAnswer = "workd"
         viewModel.submit { _ in XCTFail("Should not finish yet") }
-        XCTAssertNotNil(viewModel.spellingHint)
+        XCTAssertTrue(viewModel.showingFeedback)
+        XCTAssertEqual(viewModel.submissions.first?.userAnswer, "workd")
+        XCTAssertNotNil(viewModel.submissions.first?.ragFeedback)
         XCTAssertEqual(viewModel.currentIndex, 0)
         viewModel.advance { _ in XCTFail("Should not finish yet") }
         for _ in 1..<14 {

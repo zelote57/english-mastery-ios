@@ -10,7 +10,6 @@ final class TestViewModel {
     private(set) var submissions: [QuestionSubmission] = []
     private(set) var currentIndex = 0
     private(set) var feedback = ""
-    private(set) var spellingHint: String?
     var showingFeedback = false
     var errorMessage: String?
 
@@ -36,7 +35,7 @@ final class TestViewModel {
 
     func submit(onComplete: ([QuestionSubmission]) throws -> Void) {
         guard questions.count == 15, let question = currentQuestion, inputController.canSubmit,
-              submissions.count == currentIndex, !showingFeedback, spellingHint == nil else { return }
+              submissions.count == currentIndex, !showingFeedback else { return }
         let answer = inputController.currentAnswerString
         let grade = ScoringEngine.grade(answer: answer, for: question)
         let explanation = grade.pointsEarned == 0 ? Self.fallback(skill: skill, question: question, answer: answer) : nil
@@ -44,8 +43,6 @@ final class TestViewModel {
         if let explanation {
             feedback = explanation
             showingFeedback = true
-        } else if grade.isPartial {
-            spellingHint = "Check the spelling: \(question.correctAnswer)"
         } else {
             advance(onComplete: onComplete)
         }
@@ -54,7 +51,6 @@ final class TestViewModel {
     func advance(onComplete: ([QuestionSubmission]) throws -> Void) {
         guard submissions.count == currentIndex + 1 else { return }
         showingFeedback = false
-        spellingHint = nil
         if submissions.count == questions.count {
             do {
                 try onComplete(submissions)

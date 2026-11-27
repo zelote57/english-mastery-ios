@@ -16,7 +16,7 @@ Operational manual for creating pedagogically accurate Cambridge English (`A1` t
 
 Consult these files before authoring seed questions or knowledge-base documents:
 - [01-cambridge-phases.md](../../../specs/01-cambridge-phases.md) — 9-phase tier definitions (`A1` to `B2_ADV`) and Cambridge exam alignment (`A2 Key`, `B1 Preliminary`, `B2 First`).
-- [02-curriculum-skills.md](../../../specs/02-curriculum-skills.md) — Canonical 29 `skillCode` entries, topics, `questionType` rules, and Levenshtein partial credit rubric.
+- [02-curriculum-skills.md](../../../specs/02-curriculum-skills.md) — Canonical 29 `skillCode` entries, topics, `questionType` rules, and binary grading rubric.
 - [04-data-models.json](../../../specs/04-data-models.json) — Exact schemas for `Phase`, `Skill`, `Question`, and `Chunk`.
 - [grammar-rules/README.md](../../../knowledge-base/grammar-rules/README.md) — Exact file tree mapping the 26 grammar `.md` files to all 29 skills.
 - [spanish-interference/README.md](../../../knowledge-base/spanish-interference/README.md) — Error categories (`False Friends`, `Problematic Prepositions`, `Structural Errors`) and document contract.
@@ -31,7 +31,7 @@ When building the deterministic seed dataset under `iosApp/Sources/Data/`:
 3. **Placement Calibration (`18` Questions):** Mark **exactly 2 questions per phase** (`isPlacementEligible = true`, `9 × 2 = 18` total) that directly test the core grammar diagnostic of that tier without obscure edge cases.
 4. **Question Type Authoring Rules:**
    - `multipleChoice`: Include 3 plausible `distractors`. Design at least 1–2 distractors per question around realistic Spanish-to-English interference errors (e.g., `"I have 20 years"`, `"depends of"`, `"actually"` used as `"currently"`). Never include `correctAnswer` inside `distractors`.
-   - `fillBlank` & `translation`: Populate `acceptedSynonyms` with all legitimate grammatical equivalents (e.g., `["I am going to", "I'm going to"]`, `["do not", "don't"]`) so valid forms score `+1.0`, while deterministic Levenshtein edit distance (`<= 2`, or `<= 1` for `< 5` chars) catches genuine minor typos for `+0.5`.
+   - `fillBlank` & `translation`: Populate `acceptedSynonyms` with legitimate grammatical equivalents (e.g., `["I am going to", "I'm going to"]`, `["do not", "don't"]`) so valid forms score `+1.0`; spelling mistakes score `0.0`.
    - `reorder`: Provide unambiguous scrambled tokens in `prompt` and the single canonical English sentence in `correctAnswer`.
 5. **Prompt Language Rule:** Keep all `Question.prompt` text in **English** (for `translation`, frame the instruction in English, e.g., `Translate into English: "Ella vivió en Madrid el año pasado."`).
 

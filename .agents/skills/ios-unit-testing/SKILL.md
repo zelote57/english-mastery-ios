@@ -2,7 +2,7 @@
 name: ios-unit-testing
 description: >-
   Designs and writes deterministic XCTest suites for Swift 6 strict concurrency,
-  in-memory SwiftData @Model persistence, Domain progression/Levenshtein
+  in-memory SwiftData @Model persistence, Domain progression/binary grading
   engines, and protocol-mocked RAG pipelines in iosApp/Tests/. Use when
   implementing Milestone 1/3/4 unit tests or adding regression coverage.
 ---
@@ -16,7 +16,7 @@ Operational manual for writing deterministic, zero-flakiness unit tests in `iosA
 Consult these files before writing or updating tests:
 - [AGENTS.md](../../../AGENTS.md) — Test requirements for all domain logic and RAG pipeline.
 - [01-cambridge-phases.md](../../../specs/01-cambridge-phases.md) — Thresholds (`>= 0.80`), phase progression, infinite repetition, and Drill Score Isolation invariants.
-- [02-curriculum-skills.md](../../../specs/02-curriculum-skills.md) — `questionType` grading matrix and deterministic Levenshtein partial-credit rules.
+- [02-curriculum-skills.md](../../../specs/02-curriculum-skills.md) — `questionType` grading matrix and deterministic binary scoring.
 - [03-rag-architecture.md](../../../specs/03-rag-architecture.md) — Chunker (~300 tokens), Top-3 cosine retrieval, Spanish output template, and fallback contract.
 - [04-data-models.json](../../../specs/04-data-models.json) — Canonical schema contracts.
 - [RAGPipelineTests.swift](../../../iosApp/Tests/RAGPipelineTests.swift) — Existing RAG and native embedding tests.
@@ -27,7 +27,7 @@ Consult these files before writing or updating tests:
 ### 1. Framework & Target Structure
 - Use **`XCTest`** (`import XCTest`, `@testable import EnglishMastery`) matching existing tests and CI (`xcodebuild test` in `.github/workflows/ios-build.yml`).
 - Organize test files by feature/domain component under `iosApp/Tests/` (all files inside `Tests/` are auto-included by `iosApp/Project.yml`), e.g.:
-  - `ScoringEngineTests.swift` (Levenshtein partial credit, normalization, `multipleChoice` vs `fillBlank`)
+  - `ScoringEngineTests.swift` (binary grading, normalization, and accepted synonyms)
   - `ProgressionEngineTests.swift` (onboarding, 18-Q placement, monotonic `bestScore`, 9-phase unlocking)
   - `MistakeDrillIsolationTests.swift` (strict isolation invariants)
   - `SwiftDataPersistenceTests.swift` (in-memory container, relationships, seeding counts)
@@ -73,10 +73,10 @@ Every Domain & RAG test suite MUST cover these exact boundary cases:
 
 | Area | Required Edge Cases |
 |:--|:--|
-| **Mastery Threshold** | `0.79` (`11.5 / 15.0` or `11.0 / 15.0`) -> `isPassed == false`; `0.80` (`12.0 / 15.0` via 12×`+1.0` OR 11×`+1.0` + 2×`+0.5`) -> `isPassed == true` |
-| **Levenshtein Partial Credit** | Exact & `acceptedSynonyms` (case/whitespace/apostrophe variations) -> `+1.0` (`isCorrect == true`); `fillBlank`/`translation` edit distance `1` on `< 5`-char word -> `+0.5`, distance `2` on `< 5`-char word -> `0.0`; distance `2` on `>= 5`-char word -> `+0.5`, distance `3` -> `0.0`; `multipleChoice`/`reorder` close string -> `0.0` (never `+0.5`) |
-| **Attempt Counters** | `correctAnswers` counts ONLY `+1.0` items; `earnedPoints` sums `+1.0` and `+0.5`; `score == earnedPoints / Double(totalQuestions)` |
-| **Placement Routing** | Start from Scratch -> `A1` `available`, `2...9` `locked`; Sequential threshold (`>= 1.5 / 2.0`): Place at Phase `1` (`A1`) -> `0` skipped phases; First block `< 1.5` stops advancement even if later blocks pass (`1...K-1` `skippedPassed`, `K` `available`, `K+1...9` `locked`); Perfect `18/18` places at Phase `9` (`B2_ADV`) `available` with `1...8` `skippedPassed` |
+| **Mastery Threshold** | `11 / 15` -> `isPassed == false`; `12 / 15` -> `isPassed == true` |
+| **Binary Grading** | Exact & `acceptedSynonyms` (case/whitespace/apostrophe/final punctuation variations) -> `+1.0`; spelling and grammatical errors -> `0.0` for every type; retain historical `0.5` records |
+| **Attempt Counters** | `correctAnswers` counts `+1.0` items; new `earnedPoints` sums `+1.0` and `0.0`; `score == earnedPoints / Double(totalQuestions)` |
+| **Placement Routing** | Start from Scratch -> `A1` `available`, `2...9` `locked`; both questions per phase must be correct; first failed block stops advancement even if later blocks pass (`1...K-1` `skippedPassed`, `K` `available`, `K+1...9` `locked`); perfect `18/18` places at Phase `9` (`B2_ADV`) `available` with `1...8` `skippedPassed` |
 | **Infinite Repetition & Phase Unlock** | Retaking passed skill with `0.40` preserves `isPassed == true` and higher `bestScore`; `N - 1` passed skills leaves `currentPhaseId` unchanged; passing skill `N` marks `activePhase` `completed` and advances; completing Phase `9` marks Phase `9` `completed` cleanly without overflow; completing a `skippedPassed` phase skill never mutates `user.currentPhaseId` |
 | **Drill Score Isolation** | Completing `MistakeDrillView` / `MistakeDrillUseCase` leaves `Attempt` count, `Attempt.score`, `Skill.bestScore`, `Skill.isPassed`, `user.currentPhaseId`, `user.streakDays`, and 5-attempt trend identical |
 | **Streak & History** | Last 5 `skillAssessment` attempts sorted chronologically (`placementTest` excluded from skill history); calendar-day streak increments on next day, stays flat on same day, resets after missed day |

@@ -17,7 +17,7 @@ Operational manual for building the Presentation layer (`iosApp/Sources/Presenta
 Consult these files before creating or editing any view or ViewModel:
 - [05-ui-flows.md](../../../specs/05-ui-flows.md) — Complete navigation map, all 8 views, `AppState` enum, and language separation rule.
 - [01-cambridge-phases.md](../../../specs/01-cambridge-phases.md) — 9-phase curriculum metadata (`A1` to `B2_ADV`) and 4 skill/phase UI states.
-- [02-curriculum-skills.md](../../../specs/02-curriculum-skills.md) — Question types (`multipleChoice`, `fillBlank`, `translation`, `reorder`) and partial-credit UX behavior.
+- [02-curriculum-skills.md](../../../specs/02-curriculum-skills.md) — Question types (`multipleChoice`, `fillBlank`, `translation`, `reorder`) and binary grading.
 - [04-data-models.json](../../../specs/04-data-models.json) — Canonical fields for `User`, `Phase`, `Skill`, `Question`, `Attempt`, and `AnswerRecord`.
 - [06-roadmap-milestones.md](../../../specs/06-roadmap-milestones.md) — Milestone 2 (UI without RAG) and Milestone 5 (polish, Dark Mode, accessibility).
 - [AGENTS.md](../../../AGENTS.md) — `@Observable`, `async/await`, subview extraction, and file naming rules.
@@ -28,7 +28,7 @@ Consult these files before creating or editing any view or ViewModel:
 - **Presentation Location:** Place all Views and ViewModels under `iosApp/Sources/Presentation/` (auto-scanned by `iosApp/Project.yml`). Name every file after its primary type (e.g., `HomeView.swift`, `HomeViewModel.swift`).
 - **ViewModels:** Annotate ViewModels with `@Observable` and `@MainActor`. Never use legacy `ObservableObject`, `@Published`, `@ObservedObject`, `@StateObject`, or Combine pipelines.
 - **View Purity:** Keep SwiftUI `View` bodies strictly declarative and under **~50 lines**. When a view grows larger, extract focused subviews (e.g., `PhaseSectionView.swift`, `QuestionPromptCard.swift`).
-- **Zero Business Logic in Views:** Never perform Levenshtein grading, phase unlocking, `Attempt` creation, or RAG retrieval inside SwiftUI Views; delegate through ViewModels to `Domain` use cases via `async/await`.
+- **Zero Business Logic in Views:** Never perform grading, phase unlocking, `Attempt` creation, or RAG retrieval inside SwiftUI Views; delegate through ViewModels to `Domain` use cases via `async/await`.
 - **SwiftData Boundary:** Keep `@Model` mutations isolated cleanly; pass `Sendable` Domain structs across `Task` / `actor` boundaries.
 
 ## Step-by-Step UI Implementation Procedure
@@ -57,8 +57,7 @@ Render question UI cleanly per `Question.questionType`:
 
 Immediate post-submission feedback handling:
 - **`pointsEarned == 1.0`:** Briefly highlight success and advance.
-- **`pointsEarned == 0.5` (`fillBlank` / `translation`):** Show a non-blocking spelling hint revealing the exact `correctAnswer` spelling before advancing.
-- **`pointsEarned == 0.0`:** Pause test progression immediately and present a sheet with a non-blocking thinking/streaming state (or deterministic 3-heading Spanish fallback card in Milestone 2) displaying:
+- **`pointsEarned == 0.0`, including spelling errors:** Pause test progression immediately and present a sheet with a non-blocking thinking/streaming state (or deterministic 3-heading Spanish fallback card in Milestone 2) displaying:
   - `### 💡 ¿Por qué no es correcta?`
   - `### 📘 Regla clave`
   - `### 🔍 Ejemplos prácticos`

@@ -8,15 +8,15 @@ final class MistakeDrillIsolationTests: XCTestCase {
         let user = User(currentPhaseId: phase.id, hasCompletedOnboarding: true)
 
         let qPass = Question(skillId: skill.id, prompt: "Q1", correctAnswer: "works", questionType: .fillBlank)
-        let qPartial = Question(skillId: skill.id, prompt: "Q2", correctAnswer: "studies", questionType: .fillBlank)
+        let qTypo = Question(skillId: skill.id, prompt: "Q2", correctAnswer: "studies", questionType: .fillBlank)
         let qFail1 = Question(skillId: skill.id, prompt: "Q3", correctAnswer: "watches", questionType: .fillBlank)
         let qFail2 = Question(skillId: skill.id, prompt: "Q4", correctAnswer: "goes", questionType: .fillBlank)
 
         let submissions = Array(repeating: QuestionSubmission(question: qPass, userAnswer: "works"), count: 8)
-            + [QuestionSubmission(question: qPartial, userAnswer: "studis")] // +0.5 partial (NOT queued for drill)
+            + [QuestionSubmission(question: qTypo, userAnswer: "studis")]
             + [
-                QuestionSubmission(question: qFail1, userAnswer: "watching", ragFeedback: "Explicación 1"), // 3 edits > 2 -> 0.0 miss
-                QuestionSubmission(question: qFail2, userAnswer: "go", ragFeedback: "Explicación 2")        // 2 edits > 1 -> 0.0 miss
+                QuestionSubmission(question: qFail1, userAnswer: "watching", ragFeedback: "Explicación 1"),
+                QuestionSubmission(question: qFail2, userAnswer: "go", ragFeedback: "Explicación 2")
             ]
 
         let evaluation = EvaluateAttemptUseCase.evaluate(
@@ -34,10 +34,12 @@ final class MistakeDrillIsolationTests: XCTestCase {
 
         var drill = MistakeDrillUseCase(
             attempt: evaluation.attempt,
-            questions: [qPass, qPartial, qFail1, qFail2]
+            questions: [qPass, qTypo, qFail1, qFail2]
         )
 
-        XCTAssertEqual(drill.totalMissedCount, 2)
+        XCTAssertEqual(drill.totalMissedCount, 3)
+        XCTAssertEqual(drill.currentQuestion?.id, qTypo.id)
+        XCTAssertTrue(drill.submit(answer: "studies"))
         XCTAssertEqual(drill.currentQuestion?.id, qFail1.id)
 
         // Wrong answer rotates qFail1 after qFail2
@@ -48,16 +50,15 @@ final class MistakeDrillIsolationTests: XCTestCase {
         // Exact answer clears qFail2
         XCTAssertTrue(drill.submit(answer: "goes"))
         XCTAssertEqual(drill.currentQuestion?.id, qFail1.id)
-        XCTAssertEqual(drill.completedCount, 1)
+        XCTAssertEqual(drill.completedCount, 2)
 
-        // Partial (+0.5) spelling slip during drill requires full exact retry
         XCTAssertFalse(drill.submit(answer: "watces"))
         XCTAssertFalse(drill.isCompleted)
 
         // Exact answer completes drill
         XCTAssertTrue(drill.submit(answer: "watches"))
         XCTAssertTrue(drill.isCompleted)
-        XCTAssertEqual(drill.completedCount, 2)
+        XCTAssertEqual(drill.completedCount, 3)
         XCTAssertNil(drill.currentQuestion)
 
         // Strict Drill Score Isolation invariants remain untouched

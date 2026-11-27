@@ -64,9 +64,9 @@ final class SwiftDataPersistenceTests: XCTestCase {
 
             if question.questionType == .multipleChoice {
                 XCTAssertEqual(question.distractors.count, 3)
-                let normalizedAnswer = ScoringEngine.normalize(question.correctAnswer, stripTerminalPunctuation: false)
+                let normalizedAnswer = ScoringEngine.normalize(question.correctAnswer, stripTerminalPunctuation: true)
                 let normalizedDistractors = question.distractors.map {
-                    ScoringEngine.normalize($0, stripTerminalPunctuation: false)
+                    ScoringEngine.normalize($0, stripTerminalPunctuation: true)
                 }
                 XCTAssertFalse(normalizedDistractors.contains(normalizedAnswer))
             }
@@ -88,6 +88,39 @@ final class SwiftDataPersistenceTests: XCTestCase {
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<PhaseModel>()), 9)
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<SkillModel>()), 29)
         XCTAssertEqual(try context.fetchCount(FetchDescriptor<QuestionModel>()), 29 * 16)
+    }
+
+    func testLegacyPartialCreditSurvivesCurriculumReload() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        try CurriculumSeeder.seedIfNeeded(in: context)
+        let user = try XCTUnwrap(context.fetch(FetchDescriptor<UserModel>()).first)
+        let skill = try XCTUnwrap(context.fetch(FetchDescriptor<SkillModel>()).first)
+        let question = try XCTUnwrap(context.fetch(FetchDescriptor<QuestionModel>()).first)
+        let attemptId = UUID()
+        let attempt = Attempt(
+            id: attemptId, userId: user.id, skillId: skill.id,
+            score: 0.75, earnedPoints: 1.5, totalQuestions: 2, correctAnswers: 1,
+            answers: [
+                AnswerRecord(attemptId: attemptId, questionId: question.id, userAnswer: "correct", pointsEarned: 1),
+                AnswerRecord(attemptId: attemptId, questionId: question.id, userAnswer: "typo", pointsEarned: 0.5)
+            ]
+        )
+        skill.bestScore = 0.75
+        context.insert(AttemptModel(from: attempt))
+        try context.save()
+        try CurriculumSeeder.seedIfNeeded(in: context)
+
+        let readContext = ModelContext(container)
+        let saved = try XCTUnwrap(readContext.fetch(FetchDescriptor<AttemptModel>()).first?.toDomain())
+        XCTAssertEqual(saved.score, 0.75)
+        XCTAssertEqual(saved.earnedPoints, 1.5)
+        XCTAssertTrue(saved.answers.contains { $0.pointsEarned == 0.5 })
+        let skillId = skill.id
+        let savedSkill = try XCTUnwrap(
+            readContext.fetch(FetchDescriptor<SkillModel>(predicate: #Predicate { $0.id == skillId })).first
+        )
+        XCTAssertEqual(savedSkill.bestScore, 0.75)
     }
 
     func testDomainRoundTripAttemptPersistenceAndCascadeDelete() throws {
@@ -141,15 +174,14 @@ final class SwiftDataPersistenceTests: XCTestCase {
         let placementAttemptModel = AttemptModel(from: placementAttempt)
         seedContext.insert(placementAttemptModel)
 
-        // Official skill assessment with +1.0, +0.5 partial (clears ragFeedback), and 0.0 miss (keeps ragFeedback).
         let targetSkillModel = try XCTUnwrap(skillModels.first(where: { $0.phaseId == placementOutcome.targetPhase.id }))
         let skillQuestions = questions.filter { $0.skillId == targetSkillModel.id }
         let fullQ = try XCTUnwrap(skillQuestions.first(where: { $0.questionType == .fillBlank }))
-        let partialQ = Question(skillId: targetSkillModel.id, prompt: "Spelling", correctAnswer: "worked", questionType: .fillBlank)
+        let typoQ = Question(skillId: targetSkillModel.id, prompt: "Spelling", correctAnswer: "worked", questionType: .fillBlank)
         let failQ = Question(skillId: targetSkillModel.id, prompt: "Missed", correctAnswer: "studied", questionType: .fillBlank)
         let skillSubmissions = [
             QuestionSubmission(question: fullQ, userAnswer: fullQ.correctAnswer, ragFeedback: "Should clear"),
-            QuestionSubmission(question: partialQ, userAnswer: "workd", ragFeedback: "Should clear"),
+            QuestionSubmission(question: typoQ, userAnswer: "workd", ragFeedback: "Spelling feedback"),
             QuestionSubmission(question: failQ, userAnswer: "completely wrong", ragFeedback: "### 💡 Regla clave"),
         ] + Array(repeating: QuestionSubmission(question: fullQ, userAnswer: fullQ.correctAnswer), count: 12)
 
@@ -185,7 +217,7 @@ final class SwiftDataPersistenceTests: XCTestCase {
             readContext.fetch(FetchDescriptor<SkillModel>(predicate: #Predicate { $0.id == targetId })).first?.toDomain()
         )
         XCTAssertTrue(reloadedSkill.isPassed)
-        XCTAssertEqual(reloadedSkill.bestScore, 13.5 / 15.0, accuracy: 0.0001)
+        XCTAssertEqual(reloadedSkill.bestScore, 13.0 / 15.0, accuracy: 0.0001)
 
         let reloadedSkillAttemptId = skillOutcome.attempt.id
         let reloadedAttemptModel = try XCTUnwrap(
@@ -196,9 +228,9 @@ final class SwiftDataPersistenceTests: XCTestCase {
         let reloadedFullRecords = reloadedAttempt.answers.filter { $0.questionId == fullQ.id }
         XCTAssertEqual(reloadedFullRecords.count, 13)
         XCTAssertTrue(reloadedFullRecords.allSatisfy { $0.ragFeedback == nil })
-        let reloadedPartial = try XCTUnwrap(reloadedAttempt.answers.first { $0.questionId == partialQ.id })
-        XCTAssertEqual(reloadedPartial.pointsEarned, 0.5)
-        XCTAssertNil(reloadedPartial.ragFeedback)
+        let reloadedTypo = try XCTUnwrap(reloadedAttempt.answers.first { $0.questionId == typoQ.id })
+        XCTAssertEqual(reloadedTypo.pointsEarned, 0.0)
+        XCTAssertEqual(reloadedTypo.ragFeedback, "Spelling feedback")
         let reloadedFail = try XCTUnwrap(reloadedAttempt.answers.first { $0.questionId == failQ.id })
         XCTAssertEqual(reloadedFail.pointsEarned, 0.0)
         XCTAssertEqual(reloadedFail.ragFeedback, "### 💡 Regla clave")

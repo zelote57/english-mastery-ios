@@ -18,7 +18,7 @@ Structured code review rubric tailored to this repository's Swift 6 / SwiftUI / 
 Consult the relevant spec before judging domain or UI logic in a diff:
 - [AGENTS.md](../../../AGENTS.md) — Swift 6 strict concurrency, MVVM, `@Observable`, subview size (~50 lines), file naming, and anti-overengineering rules.
 - [01-cambridge-phases.md](../../../specs/01-cambridge-phases.md) — 9 phases (`A1`…`B2_ADV`), `>= 0.80` mastery threshold, monotonic `bestScore`, `skippedPassed`, and Drill Score Isolation.
-- [02-curriculum-skills.md](../../../specs/02-curriculum-skills.md) — 29 skills, deterministic Levenshtein partial credit (`fillBlank`/`translation` only), and rubric rules.
+- [02-curriculum-skills.md](../../../specs/02-curriculum-skills.md) — 29 skills and deterministic binary grading.
 - [03-rag-architecture.md](../../../specs/03-rag-architecture.md) — 100% on-device execution, ~300-token chunking, Top-3 cosine retrieval, grounded Spanish prompts.
 - [04-data-models.json](../../../specs/04-data-models.json) — Canonical schemas, types, and enums for all 7 models.
 - [05-ui-flows.md](../../../specs/05-ui-flows.md) — 8 views, 7 `AppState` cases, and strict EN/ES language separation.
@@ -37,7 +37,7 @@ Consult the relevant spec before judging domain or UI logic in a diff:
 #### Axis A — Domain & Spec Invariants (`Blocker` if violated)
 - **9-Phase & 29-Skill Alignment:** Enum raw values and state names match `04-data-models.json` (`A1`…`B2_ADV`, `skippedPassed`, `skillAssessment`, `placementTest`).
 - **Scoring & Mastery Rules:**
-  - `+0.5` partial credit applies ONLY to `fillBlank` and `translation` via deterministic Levenshtein (`<= 2`, or `<= 1` for `< 5` chars) — never to `multipleChoice`/`reorder`, and never invokes AI inference.
+  - New answers score `1.0` for a normalized accepted match and `0.0` otherwise, including spelling errors; historical partial-credit scores remain unchanged.
   - `Attempt.correctAnswers` counts only `+1.0` full answers; `bestScore` is monotonic and never revokes `isPassed`.
 - **Drill Score Isolation:** `MistakeDrillView` / `MistakeDrillUseCase` MUST NEVER create an `Attempt`, alter `Attempt.score`, `Skill.bestScore`, `Skill.isPassed`, `user.streakDays`, or unlock any phase.
 - **Placement Isolation:** `PlacementTestView` serves 18 `isPlacementEligible` questions without mid-test RAG interruption sheets.
@@ -55,7 +55,7 @@ Consult the relevant spec before judging domain or UI logic in a diff:
 
 #### Axis C — Tests & Regression Coverage (`Major`)
 - Any new or modified Domain logic, persistence flow, or RAG pipeline step includes deterministic `XCTest` coverage in `iosApp/Tests/` (in-memory SwiftData `ModelConfiguration(isStoredInMemoryOnly: true)` and protocol fakes).
-- Check edge cases: `0.79` vs `0.80` pass threshold, Levenshtein length `< 5` vs `>= 5`, Phase 1 and Phase 9 placement boundaries, empty/timeout LLM fallback returning the 3-heading Spanish card.
+- Check edge cases: `0.79` vs `0.80` pass threshold, spelling errors, Phase 1 and Phase 9 placement boundaries, empty/timeout LLM fallback returning the 3-heading Spanish card.
 
 #### Axis D — Security & Project Hygiene (`Blocker`)
 - Zero hardcoded tokens, GitHub PATs, API keys, `.env`, or `mcp_config.json` files anywhere in the diff.

@@ -24,11 +24,10 @@ final class ProgressionEngineTests: XCTestCase {
         return (phases, skills)
     }
 
-    private func makeSubmissions(skillId: UUID, fullCount: Int, partialCount: Int = 0, total: Int = 15) -> [QuestionSubmission] {
+    private func makeSubmissions(skillId: UUID, fullCount: Int, total: Int = 15) -> [QuestionSubmission] {
         let fullQ = Question(skillId: skillId, prompt: "P", correctAnswer: "worked", questionType: .fillBlank)
-        let failCount = max(0, total - fullCount - partialCount)
+        let failCount = max(0, total - fullCount)
         return Array(repeating: QuestionSubmission(question: fullQ, userAnswer: "worked"), count: fullCount)
-            + Array(repeating: QuestionSubmission(question: fullQ, userAnswer: "workd"), count: partialCount)
             + Array(repeating: QuestionSubmission(question: fullQ, userAnswer: "wrong"), count: failCount)
     }
 
@@ -47,19 +46,19 @@ final class ProgressionEngineTests: XCTestCase {
             skill: skill,
             phases: updatedPhases,
             skills: skills,
-            submissions: makeSubmissions(skillId: skill.id, fullCount: 11, partialCount: 1) // 11.5 / 15 = 0.7667
+            submissions: makeSubmissions(skillId: skill.id, fullCount: 11)
         )
         XCTAssertFalse(belowThreshold.updatedSkill.isPassed)
 
-        let exactThresholdViaPartial = EvaluateAttemptUseCase.evaluate(
+        let exactThreshold = EvaluateAttemptUseCase.evaluate(
             user: user,
             skill: skill,
             phases: updatedPhases,
             skills: skills,
-            submissions: makeSubmissions(skillId: skill.id, fullCount: 11, partialCount: 2) // 12.0 / 15 = 0.80
+            submissions: makeSubmissions(skillId: skill.id, fullCount: 12)
         )
-        XCTAssertTrue(exactThresholdViaPartial.updatedSkill.isPassed)
-        XCTAssertEqual(exactThresholdViaPartial.updatedSkill.bestScore, 0.80, accuracy: 0.0001)
+        XCTAssertTrue(exactThreshold.updatedSkill.isPassed)
+        XCTAssertEqual(exactThreshold.updatedSkill.bestScore, 0.80, accuracy: 0.0001)
 
         let explicit79Percent = EvaluateAttemptUseCase.evaluate(
             user: user,
@@ -221,7 +220,6 @@ final class ProgressionEngineTests: XCTestCase {
         let (phases, skills) = makeNinePhaseCurriculum()
         let user = User(currentPhaseId: phases[0].id)
 
-        // Phase 1: 2.0/2.0, Phase 2: 1.5/2.0 (1 exact + 1 Levenshtein typo), Phase 3: 1.0/2.0 (< 1.5 -> K=3), Phases 4..9: 2.0/2.0
         var submissions: [QuestionSubmission] = []
         for (index, phase) in phases.enumerated() {
             let phaseSkill = skills.first { $0.phaseId == phase.id }!
@@ -229,12 +227,9 @@ final class ProgressionEngineTests: XCTestCase {
             let q2 = Question(skillId: phaseSkill.id, prompt: "Q2", correctAnswer: "studied", questionType: .fillBlank, isPlacementEligible: true)
 
             switch index {
-            case 1:
-                submissions.append(QuestionSubmission(question: q1, userAnswer: "worked"))
-                submissions.append(QuestionSubmission(question: q2, userAnswer: "studid")) // +0.5 -> total 1.5
             case 2:
                 submissions.append(QuestionSubmission(question: q1, userAnswer: "worked"))
-                submissions.append(QuestionSubmission(question: q2, userAnswer: "wrong"))  // 0.0 -> total 1.0
+                submissions.append(QuestionSubmission(question: q2, userAnswer: "studid"))
             default:
                 submissions.append(QuestionSubmission(question: q1, userAnswer: "worked"))
                 submissions.append(QuestionSubmission(question: q2, userAnswer: "studied"))

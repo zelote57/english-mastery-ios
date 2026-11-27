@@ -14,9 +14,8 @@ struct PlacementOutcome: Equatable, Sendable {
     let updatedPhases: [Phase]
 }
 
-/// Routes a learner to Phase 1 (`Start from Scratch`) or Phase K via sequential `>= 1.5` placement.
 enum PlacementEvaluationUseCase: Sendable {
-    static let phasePassThreshold = 1.5
+    static let phasePassThreshold = 2.0
 
     static func startFromScratch(user: User, phases: [Phase]) throws -> PlacementOutcome {
         var ordered = phases.sorted { $0.order < $1.order }

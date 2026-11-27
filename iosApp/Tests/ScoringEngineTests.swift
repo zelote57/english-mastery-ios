@@ -24,7 +24,6 @@ final class ScoringEngineTests: XCTestCase {
         let result = ScoringEngine.grade(answer: "  SHE   didn\u{2019}t  go home?!  ", for: question)
         XCTAssertEqual(result.pointsEarned, 1.0)
         XCTAssertTrue(result.isCorrect)
-        XCTAssertFalse(result.isPartial)
     }
 
     func testAcceptedSynonymAwardsFullCreditAndContractionsAreNotGloballyExpanded() {
@@ -39,24 +38,20 @@ final class ScoringEngineTests: XCTestCase {
         XCTAssertEqual(ScoringEngine.grade(answer: "I am", for: strictContraction).pointsEarned, 0.0)
     }
 
-    func testLevenshteinThresholdShortWordsUnderFiveCharsAllowMaxOneEdit() {
-        let question = makeQuestion(type: .fillBlank, correctAnswer: "went") // 4 chars
-        XCTAssertEqual(ScoringEngine.grade(answer: "wnt", for: question).pointsEarned, 0.5)
-        XCTAssertEqual(ScoringEngine.grade(answer: "wn", for: question).pointsEarned, 0.0)
-    }
-
-    func testLevenshteinThresholdWordsFiveOrMoreCharsAllowMaxTwoEdits() {
+    func testSpellingAndGrammarMistakesReceiveNoCredit() {
+        let short = makeQuestion(type: .fillBlank, correctAnswer: "she")
         let question = makeQuestion(
-            type: .fillBlank,
-            correctAnswer: "worked", // 6 chars
+            type: .translation,
+            correctAnswer: "worked",
             acceptedSynonyms: ["studied"]
         )
-        XCTAssertEqual(ScoringEngine.grade(answer: "wrkdd", for: question).pointsEarned, 0.5) // 2 edits
-        XCTAssertEqual(ScoringEngine.grade(answer: "wrx", for: question).pointsEarned, 0.0)   // > 2 edits
-        XCTAssertEqual(ScoringEngine.grade(answer: "studid", for: question).pointsEarned, 0.5) // synonym typo
+        XCTAssertEqual(ScoringEngine.grade(answer: "he", for: short).pointsEarned, 0.0)
+        XCTAssertEqual(ScoringEngine.grade(answer: "sge", for: short).pointsEarned, 0.0)
+        XCTAssertEqual(ScoringEngine.grade(answer: "workd", for: question).pointsEarned, 0.0)
+        XCTAssertEqual(ScoringEngine.grade(answer: "studid", for: question).pointsEarned, 0.0)
     }
 
-    func testEmptyAndPunctuationOnlyInputsNeverEarnPartialCredit() {
+    func testEmptyAndPunctuationOnlyInputsNeverEarnCredit() {
         let singleCharTarget = makeQuestion(type: .fillBlank, correctAnswer: "a")
         XCTAssertEqual(ScoringEngine.grade(answer: "", for: singleCharTarget).pointsEarned, 0.0)
         XCTAssertEqual(ScoringEngine.grade(answer: "   ...?! ", for: singleCharTarget).pointsEarned, 0.0)
@@ -65,25 +60,25 @@ final class ScoringEngineTests: XCTestCase {
     func testMultipleChoiceAndReorderAreStrictlyBinary() {
         let mc = makeQuestion(type: .multipleChoice, correctAnswer: "worked")
         XCTAssertEqual(ScoringEngine.grade(answer: "workd", for: mc).pointsEarned, 0.0)
-        XCTAssertEqual(ScoringEngine.grade(answer: "worked.", for: mc).pointsEarned, 0.0)
+        XCTAssertEqual(ScoringEngine.grade(answer: "worked.", for: mc).pointsEarned, 1.0)
 
         let reorder = makeQuestion(type: .reorder, correctAnswer: "She studies English")
         XCTAssertEqual(ScoringEngine.grade(answer: "She study English", for: reorder).pointsEarned, 0.0)
-        XCTAssertEqual(ScoringEngine.grade(answer: "She studies English", for: reorder).pointsEarned, 1.0)
+        XCTAssertEqual(ScoringEngine.grade(answer: " she  studies English! ", for: reorder).pointsEarned, 1.0)
     }
 
     func testBuildAttemptCountsOnlyFullAnswersInCorrectAnswersAndFiltersRagFeedback() {
         let fullQ = makeQuestion(type: .multipleChoice, correctAnswer: "is")
-        let partialQ = makeQuestion(type: .fillBlank, correctAnswer: "worked")
+        let typoQ = makeQuestion(type: .fillBlank, correctAnswer: "worked")
         let failQ = makeQuestion(type: .fillBlank, correctAnswer: "went")
 
         var submissions: [QuestionSubmission] = Array(
             repeating: QuestionSubmission(question: fullQ, userAnswer: "is", ragFeedback: "should-be-cleared"),
-            count: 11
+            count: 12
         )
         submissions += Array(
-            repeating: QuestionSubmission(question: partialQ, userAnswer: "workd", ragFeedback: "should-be-cleared"),
-            count: 2
+            repeating: QuestionSubmission(question: typoQ, userAnswer: "workd", ragFeedback: "typo-feedback"),
+            count: 1
         )
         submissions += Array(
             repeating: QuestionSubmission(question: failQ, userAnswer: "goed", ragFeedback: "### 💡 Explicación"),
@@ -98,11 +93,12 @@ final class ScoringEngineTests: XCTestCase {
         )
 
         XCTAssertEqual(attempt.totalQuestions, 15)
-        XCTAssertEqual(attempt.correctAnswers, 11)
+        XCTAssertEqual(attempt.correctAnswers, 12)
         XCTAssertEqual(attempt.earnedPoints, 12.0, accuracy: 0.0001)
         XCTAssertEqual(attempt.score, 0.80, accuracy: 0.0001)
         XCTAssertNil(attempt.answers.first?.ragFeedback)
-        XCTAssertNil(attempt.answers[11].ragFeedback)
+        XCTAssertEqual(attempt.answers[12].pointsEarned, 0)
+        XCTAssertEqual(attempt.answers[12].ragFeedback, "typo-feedback")
         XCTAssertEqual(attempt.answers.last?.ragFeedback, "### 💡 Explicación")
     }
 }

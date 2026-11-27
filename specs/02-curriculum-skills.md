@@ -69,15 +69,15 @@
 
 ## Assessment Structure & Rubrics
 - **Skill Assessment Length:** 15 questions per `Attempt` (`attemptType: "skillAssessment"`, `totalQuestions: 15`), drawn from a `>15` question bank per skill. The current sampler shuffles and prioritizes unanswered or previously missed questions, then fills from the remaining questions; multiple-choice options are shuffled. RAG-assisted contextual variation is not implemented.
-- **Placement Test Length:** 18 diagnostic questions (`attemptType: "placementTest"`, `skillId: nil`, `totalQuestions: 18`), using 2 `isPlacementEligible == true` questions per phase from `A1` to `B2_ADV`, evaluated sequentially (`>= 1.5 / 2.0` per phase to advance; first phase `< 1.5` sets target $K$, capped at Phase 9 `B2_ADV`).
+- **Placement Test Length:** 18 diagnostic questions (`attemptType: "placementTest"`, `skillId: nil`, `totalQuestions: 18`), using 2 `isPlacementEligible == true` questions per phase from `A1` to `B2_ADV`, evaluated sequentially (both must be correct to advance; first phase below `2.0 / 2.0` sets target $K$, capped at Phase 9 `B2_ADV`).
 - **Question Types (`04-data-models.json`):**
-  - `multipleChoice` & `reorder`: Binary grading (`+1.0` or `0.0`).
-  - `fillBlank` & `translation`: Supports full (`+1.0`), partial (`+0.5`), and incorrect (`0.0`) grading against `correctAnswer` and `acceptedSynonyms`.
-- **Deterministic Offline Partial-Credit Rule:**
+  - All four types use binary grading (`+1.0` or `0.0`) against `correctAnswer` and `acceptedSynonyms`.
+- **Deterministic Offline Grading Rule:**
   - All test grading runs deterministically in pure Swift `Domain` logic with **zero AI inference**.
-  - Normalize user input and target strings before comparison (trim leading/trailing whitespace, collapse repeated spaces, normalize case/typographic apostrophes; for `fillBlank` and `translation`, also strip trailing terminal punctuation `.`, `?`, `!`). Contractions (`I'm` vs `I am`) are controlled per question via explicit `acceptedSynonyms` rather than global expansion.
-  - On `fillBlank` and `translation`, if the normalized response does not match `correctAnswer` or any entry in `acceptedSynonyms` exactly, evaluate normalized **Levenshtein edit distance** against `correctAnswer` and each `acceptedSynonyms` candidate: award `+0.5` partial credit when edit distance is `<= 2` (or `<= 1` when the target answer/word has fewer than 5 characters); otherwise award `0.0`. Empty normalized inputs always score `0.0`.
+  - Normalize user input and target strings before comparison (trim leading/trailing whitespace, collapse repeated spaces, normalize case/typographic apostrophes, and strip trailing terminal punctuation `.`, `?`, `!`). Contractions (`I'm` vs `I am`) are controlled per question via explicit `acceptedSynonyms` rather than global expansion.
+  - Answers must match a normalized accepted answer exactly. Spelling errors and empty normalized inputs score `0.0`; there is no partial credit in new attempts.
 - **Rubric Points & `AnswerRecord` Mapping:**
   - **Correct (`pointsEarned = 1.0`):** Exact normalized match to `correctAnswer` or `acceptedSynonyms` (`isCorrect = true`; increments `Attempt.correctAnswers` and adds `1.0` to `Attempt.earnedPoints`).
-  - **Partial (`pointsEarned = 0.5`):** Passes deterministic Levenshtein threshold on `fillBlank`/`translation` (`isCorrect = false`; does not increment `Attempt.correctAnswers`, adds `0.5` to `Attempt.earnedPoints` / `Attempt.score`).
-  - **Incorrect (`pointsEarned = 0.0`):** Concept, structural, vocabulary, or Spanish-interference error (`isCorrect = false`) → triggers immediate Spanish feedback sheet in `TestView` (stored in `AnswerRecord.ragFeedback`) and queues the question for `"Practice Missed Questions"` (`MistakeDrillView`).
+  - **Incorrect (`pointsEarned = 0.0`):** Any mismatch, including a spelling error (`isCorrect = false`) → triggers immediate Spanish feedback sheet in `TestView` (stored in `AnswerRecord.ragFeedback`) and queues the question for `"Practice Missed Questions"` (`MistakeDrillView`).
+
+Historical partial-credit answers, scores, and progress are retained without recalculation.

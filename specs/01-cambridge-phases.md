@@ -23,7 +23,7 @@
 ## Assessment Constants
 - **Placement Test:** 18 questions total (2 diagnostic questions per phase from `A1` to `B2_ADV`).
 - **Skill Test Length:** 15 questions per assessment session.
-- **Passing Score:** `>= 0.80` (12.0 out of 15.0 points, including `+0.5` partial credit where applicable).
+- **Passing Score:** `>= 0.80` (at least 12 correct answers out of 15).
 - **Retake Policy:** Unlimited attempts; post-test mistake drill (`Practice Missed Questions`) available exclusively for missed questions.
 
 ## Onboarding & Placement Routing
@@ -32,8 +32,8 @@ On first launch, local seeding automatically creates the default local `User` pr
 After `ModelGateView` loads the local curriculum (currently a placeholder for future model provisioning), new users choose between:
 1. **Start from Scratch:** Sets `user.currentPhaseId` to Phase 1 (`A1`) with status `available`; Phases 2–9 start `locked`.
 2. **Take Placement Test:** Runs the 18-question diagnostic test (2 questions per phase, ordered/evaluated sequentially across `A1`…`B2_ADV`).
-   - **Placement Rule (Sequential Block Threshold):** Evaluate each phase block $1 \dots 9$ in ascending order. A phase is cleared during placement when the user scores `>= 1.5` out of `2.0` points on its 2 diagnostic questions (accepting exact matches or one minor Levenshtein spelling slip, while blocking lucky single guesses).
-   - **Target Phase $K$:** $K$ is the **first** phase where the user scores `< 1.5` points (stopping at the first failed tier so later guesses do not skip foundational gaps). If the user clears all 9 phases (`1...9`), place them at $K = 9$ (`B2_ADV`) as `available` so exam-ready mastery can be completed.
+   - **Placement Rule (Sequential Block Threshold):** Evaluate each phase block $1 \dots 9$ in ascending order. A phase is cleared during placement only when both diagnostic questions are correct (`2.0 / 2.0`).
+   - **Target Phase $K$:** $K$ is the **first** phase where the user scores less than `2.0` points (stopping at the first failed tier so later guesses do not skip foundational gaps). If the user clears all 9 phases (`1...9`), place them at $K = 9$ (`B2_ADV`) as `available` so exam-ready mastery can be completed.
    - **Routing Outcome at Phase $K$:**
      - Phases $1 \dots K-1$ are marked `SKIPPED_PASSED` (`skippedPassed` — unlocked for optional practice without blocking progression).
      - Phase $K$ is marked `available` and assigned to `user.currentPhaseId`.
@@ -52,8 +52,9 @@ After `ModelGateView` loads the local curriculum (currently a placeholder for fu
 ## Assessment Scoring Rules
 Each question in a test is graded according to the rubrics in `02-curriculum-skills.md`:
 - **Correct (`+1.0` point):** Exact answer or accepted synonym (`isCorrect = true`).
-- **Partial (`+0.5` points):** Correct grammatical structure with a minor spelling/typography slip in free-text questions (`fillBlank` / `translation`).
-- **Incorrect (`0.0` points):** Concept, structural, vocabulary, or Spanish-interference error (`isCorrect = false`) → triggers an immediate Spanish feedback sheet in `TestView` and queues the question for the post-test drill. Today the explanation is deterministic; RAG + LLM feedback is planned for Milestone 4.
+- **Incorrect (`0.0` points):** Any answer that does not match an accepted answer after normalization, including spelling mistakes (`isCorrect = false`) → triggers an immediate Spanish feedback sheet in `TestView` and queues the question for the post-test drill. Today the explanation is deterministic; RAG + LLM feedback is planned for Milestone 4.
+
+Existing attempts and progress, including historical partial-credit results, remain unchanged.
 
 The normalized attempt score is `earnedPoints / Double(totalQuestions)` (ranging from `0.0` to `1.0`).
 

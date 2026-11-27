@@ -71,7 +71,7 @@ App Launch
 - Initial database seeding automatically provisions a default local `User` (`name: "Learner"`, `hasCompletedOnboarding: false`), allowing onboarding without a separate registration screen.
 - `OnboardingView` presents two English choices:
   - **"Start from Scratch"**: Sets Phase 1 (`A1`) `status = "available"`, Phases 2–9 `status = "locked"`, assigns `user.currentPhaseId` to Phase 1, sets `user.placementPhaseCode = nil`, and marks `user.hasCompletedOnboarding = true`.
-  - **"Take Placement Test"**: Launches `PlacementTestView` with **18 diagnostic questions** (`attemptType: "placementTest"`, `skillId: nil`, `totalQuestions: 18` — 2 `isPlacementEligible` questions per phase from `A1` to `B2_ADV`, run without mid-test RAG sheets). Target Phase $K$ is the first phase scoring `< 1.5 / 2.0` points sequentially from `A1` (or Phase 9 `B2_ADV` if all 9 phases clear `>= 1.5`).
+  - **"Take Placement Test"**: Launches `PlacementTestView` with **18 diagnostic questions** (`attemptType: "placementTest"`, `skillId: nil`, `totalQuestions: 18` — 2 `isPlacementEligible` questions per phase from `A1` to `B2_ADV`, run without mid-test RAG sheets). Target Phase $K$ is the first phase scoring below `2.0 / 2.0` points sequentially from `A1` (or Phase 9 `B2_ADV` if all 9 phases score `2.0`).
 - On Placement Test completion at Phase $K$:
   - Phases $1 \dots K-1$ are set to `status = "skippedPassed"` (`SKIPPED_PASSED` — unlocked for optional practice).
   - Phase $K$ is set to `status = "available"`, `user.currentPhaseId` is set to Phase $K$'s `id`, and `user.placementPhaseCode` records Phase $K$'s `level`.
@@ -95,7 +95,7 @@ App Launch
 - Serves 15 questions one at a time with randomized question order and randomized `Question.distractors`.
 - Progress bar: `Question X of 15`.
 - **Immediate Wrong-Answer Interruption:** On a `0.0` pt error (`pointsEarned == 0.0`), test progression pauses immediately and presents a feedback sheet showing a non-blocking thinking/streaming indicator while the on-device RAG + LLM pipeline (or deterministic 3-heading Spanish fallback card) generates the Spanish explanation saved to `AnswerRecord.ragFeedback`. Progression remains paused until the user taps the English **"Continue"** button.
-- Partial credit (`pointsEarned == 0.5` on `fillBlank` / `translation`) shows an inline spelling hint with the target spelling and a **"Continue"** button before advancing.
+- Spelling errors score `0.0` and follow the same feedback and missed-question drill flow as other errors.
 
 ### 6. `FeedbackView` & `MistakeDrillView`
 - Displays official `Attempt.score` immediately after question 15 (e.g., `"80%"`), with a celebration animation if `>= 0.80`.

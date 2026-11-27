@@ -20,10 +20,7 @@ struct TestView: View {
                     ScrollView {
                         QuestionInputView(question: question, controller: viewModel.inputController, onSubmit: submit)
                     }
-                    if let hint = viewModel.spellingHint {
-                        Text(hint).foregroundStyle(.secondary)
-                        Button("Continue", action: advance).buttonStyle(.borderedProminent)
-                    } else if viewModel.submissions.count > viewModel.currentIndex {
+                    if viewModel.submissions.count > viewModel.currentIndex {
                         Button("Try Again", action: advance).buttonStyle(.borderedProminent)
                     } else {
                         Button("Submit", action: submit)

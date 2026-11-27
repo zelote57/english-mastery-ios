@@ -5,7 +5,6 @@ struct GradeResult: Equatable, Sendable {
     let pointsEarned: Double
 
     var isCorrect: Bool { pointsEarned == 1.0 }
-    var isPartial: Bool { pointsEarned == 0.5 }
 }
 
 /// Learner response paired with its question and optional RAG explanation (for `0.0` misses).
@@ -21,7 +20,6 @@ struct QuestionSubmission: Equatable, Sendable {
     }
 }
 
-/// Deterministic offline grading engine (`+1.0` exact/synonym, `+0.5` Levenshtein typo, `0.0` miss).
 enum ScoringEngine: Sendable {
     /// Normalizes whitespace, case, typographic apostrophes, and optional trailing `.?!` punctuation.
     static func normalize(_ text: String, stripTerminalPunctuation: Bool) -> String {
@@ -46,57 +44,18 @@ enum ScoringEngine: Sendable {
         return normalized
     }
 
-    /// Computes character-level Levenshtein edit distance between two strings.
-    static func levenshteinDistance(_ lhs: String, _ rhs: String) -> Int {
-        let source = Array(lhs)
-        let target = Array(rhs)
-        guard !source.isEmpty else { return target.count }
-        guard !target.isEmpty else { return source.count }
-
-        var previousRow = Array(0...target.count)
-        var currentRow = Array(repeating: 0, count: target.count + 1)
-
-        for (i, sourceChar) in source.enumerated() {
-            currentRow[0] = i + 1
-            for (j, targetChar) in target.enumerated() {
-                let substitutionCost = sourceChar == targetChar ? 0 : 1
-                currentRow[j + 1] = min(
-                    previousRow[j + 1] + 1,
-                    currentRow[j] + 1,
-                    previousRow[j] + substitutionCost
-                )
-            }
-            swap(&previousRow, &currentRow)
-        }
-        return previousRow[target.count]
-    }
-
     /// Evaluates one learner response deterministically with zero AI inference.
     static func grade(answer: String, for question: Question) -> GradeResult {
-        let stripPunctuation = question.questionType == .fillBlank
-            || question.questionType == .translation
-        let normalizedAnswer = normalize(answer, stripTerminalPunctuation: stripPunctuation)
+        let normalizedAnswer = normalize(answer, stripTerminalPunctuation: true)
         guard !normalizedAnswer.isEmpty else {
             return GradeResult(pointsEarned: 0.0)
         }
 
         let candidates = ([question.correctAnswer] + question.acceptedSynonyms)
-            .map { normalize($0, stripTerminalPunctuation: stripPunctuation) }
+            .map { normalize($0, stripTerminalPunctuation: true) }
             .filter { !$0.isEmpty }
 
-        if candidates.contains(normalizedAnswer) {
-            return GradeResult(pointsEarned: 1.0)
-        }
-
-        guard question.questionType == .fillBlank || question.questionType == .translation else {
-            return GradeResult(pointsEarned: 0.0)
-        }
-
-        let passesPartialCredit = candidates.contains { candidate in
-            let maxEdits = candidate.count < 5 ? 1 : 2
-            return levenshteinDistance(normalizedAnswer, candidate) <= maxEdits
-        }
-        return GradeResult(pointsEarned: passesPartialCredit ? 0.5 : 0.0)
+        return GradeResult(pointsEarned: candidates.contains(normalizedAnswer) ? 1.0 : 0.0)
     }
 
     /// Grades all submissions and constructs an `Attempt` with linked `AnswerRecord` entries.

@@ -67,7 +67,7 @@
           "description": "Mistake drills are ephemeral reinforcement sessions and must NOT be stored as official Attempts"
         },
         "score": { "type": "Double", "description": "Normalized score from 0.0 to 1.0 (earnedPoints / Double(totalQuestions))" },
-        "earnedPoints": { "type": "Double", "description": "Sum of +1.0, +0.5, and 0.0 question points" },
+        "earnedPoints": { "type": "Double", "description": "Sum of question points; new attempts use 1.0 or 0.0, while historical attempts may include 0.5" },
         "totalQuestions": { "type": "Int", "description": "15 for skillAssessment; 18 for placementTest" },
         "correctAnswers": { "type": "Int", "description": "Count of full +1.0 answers" },
         "timestamp": { "type": "Date" },
@@ -80,7 +80,7 @@
         "attemptId": { "type": "UUID" },
         "questionId": { "type": "UUID" },
         "userAnswer": { "type": "String" },
-        "pointsEarned": { "type": "Double", "description": "1.0 (correct), 0.5 (partial spelling slip), or 0.0 (incorrect)" },
+        "pointsEarned": { "type": "Double", "description": "1.0 (correct) or 0.0 (incorrect) for new attempts; historical records may retain 0.5" },
         "isCorrect": { "type": "Bool", "description": "True only when pointsEarned == 1.0" },
         "ragFeedback": { "type": "String?", "description": "Spanish explanation stored when pointsEarned == 0.0; currently deterministic, RAG-generated in the planned LLM integration" }
       }

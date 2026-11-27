@@ -29,7 +29,6 @@ Cross-reference specs:
 - **Tri-Tier Visual & Haptic Feedback:**
   - Use native iOS 17+ `.sensoryFeedback(...)` modifiers bound to answer submission triggers:
     - `+1.0` correct → crisp green confirmation + `.sensoryFeedback(.success, trigger:)`
-    - `+0.5` partial spelling slip (`fillBlank` / `translation`) → amber non-blocking banner showing the exact target spelling + `.sensoryFeedback(.warning, trigger:)`
     - `0.0` error (in `TestView`, never `PlacementTestView`) → `.sensoryFeedback(.error, trigger:)` + immediate Spanish explanation `.sheet` with `interactiveDismissDisabled(true)` until `"Continue"` is tapped
 - **Colorblind-Safe 4-State Differentiation (`HomeView`):**
   - Never rely solely on color to distinguish `✅ passed`, `⏭️ skippedPassed`, `🔵 available`, and `🔒 locked`. Combine SF Symbols/badges, distinct contrast/opacity, and explicit English status labels or accessibility descriptions.

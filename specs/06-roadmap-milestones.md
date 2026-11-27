@@ -24,6 +24,19 @@
 - [x] `TestView` with 15-question shuffled flow and immediate wrong-answer sheet (`"Continue"` button) rendering the deterministic 3-heading Spanish fallback card (`### 💡 ¿Por qué no es correcta?`, `### 📘 Regla clave`, `### 🔍 Ejemplos prácticos`)
 - [x] `FeedbackView` with official score summary, expandable 3-heading Spanish fallback cards, and `MistakeDrillView` (`"Practice Missed Questions"` isolated loop)
 
+#### Standard app physical-device verification
+- [ ] Install the unsigned standard IPA with Sideloadly and verify the normal app on an iPhone.
+- [ ] Verify offline onboarding, an assessment with an incorrect or misspelled answer, the
+  explanation and missed-question drill, then restart the app and confirm the saved score.
+
+Actions publishes the standard IPA separately from the diagnostic IPA, with its commit and
+SHA-256 checksum. The builds use the same bundle identifier, so installation may replace the
+other build or fail depending on signing. Progress is preserved only when the installation is
+accepted as an update with compatible signing; do not uninstall an existing app to resolve a
+signing failure without first considering the loss of its local data. The standard app does not
+export a diagnostic report; the owner reports the observed results manually without sharing
+credentials or learner responses.
+
 ### 🔍 Milestone 3 — RAG Pipeline
 - [x] Markdown/PDF parser with PDFKit
 - [x] Document chunking (~225 words as an approximate 300-token target) with 9-phase `level` metadata (`A1` to `B2_ADV`)

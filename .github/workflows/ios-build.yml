@@ -155,6 +155,42 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+      - name: Build unsigned standard IPA
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project iosApp/EnglishMastery.xcodeproj \
+            -scheme EnglishMastery \
+            -destination 'generic/platform=iOS' \
+            -sdk iphoneos \
+            -configuration Release \
+            -derivedDataPath .derivedData-standard-device \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee .ci-logs/text/06-standard-device-build.log
+          APP=".derivedData-standard-device/Build/Products/Release-iphoneos/EnglishMastery.app"
+          test -f "$APP/EnglishMastery"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist")" = "com.englishmastery.app"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleSupportedPlatforms:0' "$APP/Info.plist")" = "iPhoneOS"
+          lipo "$APP/EnglishMastery" -verify_arch arm64
+          mkdir -p .ci-ipa-standard/Payload
+          cp -R "$APP" .ci-ipa-standard/Payload/
+          (cd .ci-ipa-standard && zip -qry EnglishMastery.ipa Payload)
+          unzip -tq .ci-ipa-standard/EnglishMastery.ipa
+          printf 'Commit: %s\n' "${{ github.sha }}" > .ci-ipa-standard/build-info.txt
+          shasum -a 256 .ci-ipa-standard/EnglishMastery.ipa >> .ci-ipa-standard/build-info.txt
+
+      - name: Upload unsigned standard IPA
+        uses: actions/upload-artifact@v7
+        with:
+          name: english-mastery-ipa-${{ github.run_number }}
+          path: |
+            .ci-ipa-standard/EnglishMastery.ipa
+            .ci-ipa-standard/build-info.txt
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Summarize Build & Test Diagnostics
         if: always()
         run: |
@@ -168,6 +204,7 @@ jobs:
               ".ci-logs/text/03-xcodebuild-test.log",
               ".ci-logs/text/04-device-build.log",
               ".ci-logs/text/05-standard-build.log",
+              ".ci-logs/text/06-standard-device-build.log",
           ]
 
           env_always = {"00-environment.log"}

@@ -1,6 +1,16 @@
 import SwiftUI
 import SwiftData
 
+#if RAG_DIAGNOSTICS
+@main
+struct EnglishMasteryApp: App {
+    var body: some Scene {
+        WindowGroup {
+            RAGDiagnosticView()
+        }
+    }
+}
+#else
 @main
 struct EnglishMasteryApp: App {
     private let modelContainer: ModelContainer
@@ -15,6 +25,7 @@ struct EnglishMasteryApp: App {
         } catch {
             fatalError("Failed to configure SwiftData persistence: \(error)")
         }
+        #endif
     }
 
     var body: some Scene {

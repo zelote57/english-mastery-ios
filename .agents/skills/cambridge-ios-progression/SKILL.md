@@ -27,7 +27,7 @@ Consult these specs before modifying or generating code:
 
 ## Architecture Boundaries (Swift 6 Strict Concurrency)
 
-- **`iosApp/Sources/Domain/`**: Pure Swift business entities, `Sendable` domain structs/protocols, grading evaluators, and use cases (`PlacementEvaluationUseCase`, `EvaluateAttemptUseCase`, `AdvancePhaseUseCase`, `MistakeDrillUseCase`). Keep free of `SwiftUI` and `SwiftData` imports.
+- **`iosApp/Sources/Domain/`**: Pure Swift business entities, `Sendable` domain structs/protocols, grading evaluators, and use cases (`PlacementEvaluationUseCase`, `EvaluateAttemptUseCase`, `MistakeDrillUseCase`). Keep free of `SwiftUI` and `SwiftData` imports.
 - **`iosApp/Sources/Data/`**: `@Model` SwiftData classes, `ModelContainer` setup, seeding (9 phases, 29 skills, `>15` questions/skill, 18 placement-eligible questions), and repository implementations.
 - **`iosApp/Sources/Presentation/`**: `@Observable` ViewModels (`@MainActor`) and small, composable SwiftUI views.
 - **`iosApp/Tests/`**: Deterministic `XCTest` unit tests covering every progression, grading, placement, and isolation invariant.
@@ -36,7 +36,7 @@ Consult these specs before modifying or generating code:
 
 ### 1. Onboarding & 18-Question Placement Test Routing
 1. Ensure initial app seeding creates a default local `User` (`name: "Learner"`, `hasCompletedOnboarding: false`) alongside the 9 phases and 29 skills.
-2. After `ModelGateView` confirms local LLM weights are provisioned in app-private storage (or placeholder ready in Milestone 0–2), check `user.hasCompletedOnboarding`.
+2. After `ModelGateView` loads the curriculum, check `user.hasCompletedOnboarding`. Model-weight provisioning is planned for Milestone 4 and is not currently implemented.
 3. If `false`, route to `OnboardingView` presenting two English choices:
    - **"Start from Scratch"**: Marks Phase 1 (`A1`) as `available`, Phases 2–9 as `locked`, sets `user.currentPhaseId` to Phase 1, and sets `user.hasCompletedOnboarding = true`.
    - **"Take Placement Test"**: Launches `PlacementTestView` serving **18 diagnostic questions** (2 `isPlacementEligible` questions per phase from `A1` to `B2_ADV`, run in diagnostic mode without mid-test RAG interruption).

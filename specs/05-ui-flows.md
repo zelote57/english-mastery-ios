@@ -1,5 +1,13 @@
 # 05 — UI Flows (SwiftUI)
 
+## Current status versus target
+The navigation below describes the target flow. Currently `ModelGateView` loads the local
+curriculum without downloading a model, and `TestView` displays and persists a deterministic
+Spanish fallback based on the skill, question, and answer. It does not retrieve RAG context,
+run an LLM, or stream generated feedback. Model provisioning and dynamic explanations are
+planned for Milestone 4. A separate diagnostic-only build presents the device benchmark
+screen described in `06-roadmap-milestones.md`, without changing learner progress.
+
 ## Strict Language Separation Rule
 - **App UI & Assessments (English):** All SwiftUI navigation titles, labels, status badges, buttons (`"Start from Scratch"`, `"Take Placement Test"`, `"Start Test"`, `"Continue"`, `"Practice Missed Questions"`, `"Retry Test"`, `"Back to Home"`, `"Next Skill"`), and test prompts MUST be in **English**.
 - **Pedagogical Error Feedback (Spanish):** All RAG-generated and deterministic fallback explanations shown in the `TestView` error sheet and expanded inside `FeedbackView` MUST be in **Spanish** (with English example sentences).
@@ -40,7 +48,7 @@ App Launch
     │
     ▼ (after Question 15)
 ┌───────────────────┐
-│   FeedbackView    │──── Official Attempt.score (confetti if >= 0.80)
+│     FeedbackView    │──── Official Attempt.score (celebration if >= 0.80)
 │                   │──── Expandable Spanish cards from AnswerRecord.ragFeedback
 │                   │──── If failedQuestions non-empty: "Practice Missed Questions"
 │                   │──── "Retry Test" / "Back to Home" / "Next Skill"
@@ -87,10 +95,10 @@ App Launch
 - Serves 15 questions one at a time with randomized question order and randomized `Question.distractors`.
 - Progress bar: `Question X of 15`.
 - **Immediate Wrong-Answer Interruption:** On a `0.0` pt error (`pointsEarned == 0.0`), test progression pauses immediately and presents a feedback sheet showing a non-blocking thinking/streaming indicator while the on-device RAG + LLM pipeline (or deterministic 3-heading Spanish fallback card) generates the Spanish explanation saved to `AnswerRecord.ragFeedback`. Progression remains paused until the user taps the English **"Continue"** button.
-- Partial credit (`pointsEarned == 0.5` on `fillBlank` / `translation`) shows a non-blocking spelling hint displaying the exact target spelling.
+- Partial credit (`pointsEarned == 0.5` on `fillBlank` / `translation`) shows an inline spelling hint with the target spelling and a **"Continue"** button before advancing.
 
 ### 6. `FeedbackView` & `MistakeDrillView`
-- Displays official `Attempt.score` immediately after question 15 (e.g., `"80%"`), with confetti animation if `>= 0.80`.
+- Displays official `Attempt.score` immediately after question 15 (e.g., `"80%"`), with a celebration animation if `>= 0.80`.
 - Expandable list of missed questions with Spanish explanations from `AnswerRecord.ragFeedback`.
 - If `failedQuestions` (`pointsEarned == 0.0`) is non-empty, displays **"Practice Missed Questions"** button launching `MistakeDrillView` (loops only missed questions until answered correctly; strictly ephemeral with zero impact on `Attempt`, `Attempt.score`, `Skill.bestScore`, `Skill.isPassed`, or `user.currentPhaseId`).
 - Secondary actions: `"Retry Test"`, `"Back to Home"`, `"Next Skill"`.
@@ -102,6 +110,7 @@ enum AppState {
     case onboarding        // OnboardingView ("Start from Scratch" vs "Take Placement Test")
     case placementTest     // PlacementTestView (18 diagnostic questions, no mid-test RAG)
     case home              // HomeView (9-phase dashboard with ✅ / ⏭️ / 🔵 / 🔒)
+    case skillDetail       // SkillDetailView (skill progress and assessment entry)
     case testInProgress    // TestView (15-question skill assessment + error sheet)
     case reviewingFeedback // FeedbackView (official score + expandable RAG cards)
     case mistakeDrill      // MistakeDrillView ("Practice Missed Questions" isolated loop)

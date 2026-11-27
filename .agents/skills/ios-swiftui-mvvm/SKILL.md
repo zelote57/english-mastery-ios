@@ -34,8 +34,8 @@ Consult these files before creating or editing any view or ViewModel:
 ## Step-by-Step UI Implementation Procedure
 
 ### 1. Root Router & `AppState` Machine
-Implement an `@Observable @MainActor` root coordinator driving all 7 `AppState` cases from `05-ui-flows.md`:
-1. `.gatingModel` → `ModelGateView` (`loading`, `downloading(progress)`, `ready`, `error`). In Milestone 0–2 placeholder mode, allow fast transition to `.ready` without real downloads while keeping the state contract intact for Milestone 4.
+Implement an `@Observable @MainActor` root coordinator driving the 8 `AppState` cases from `05-ui-flows.md`:
+1. `.gatingModel` → `ModelGateView` (`loading`, `downloading(progress)`, `ready`, `error`). The current placeholder loads the curriculum without a model download; real provisioning is planned for Milestone 4.
 2. `.onboarding` → `OnboardingView` (shown only when `!user.hasCompletedOnboarding`), offering:
    - `"Start from Scratch"` → sets Phase 1 (`A1`) `available`, Phases 2–9 `locked`, routes to `.home`.
    - `"Take Placement Test"` → routes to `.placementTest`.

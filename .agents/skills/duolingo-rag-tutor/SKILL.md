@@ -27,12 +27,12 @@ Consult these specs and knowledge-base docs before building or modifying RAG cod
 
 ## Pipeline Architecture (Swift 6 Strict Concurrency)
 
-- **`iosApp/Sources/Domain/RAGPipeline/`**: Pure protocols (`DocumentParserProtocol`, `EmbeddingServiceProtocol`, `VectorStoreProtocol`, `LLMEngineProtocol`, `GenerateFeedbackUseCase`) and `Sendable` `Chunk` models.
-- **`iosApp/Sources/Data/PDFParser/`**: Markdown & `PDFKit` extractor + ~300-token chunker assigning 9-phase `level` metadata.
-- **`iosApp/Sources/Data/VectorStore/`**: `NLEmbedding`/CoreML vectorizer + SQLite or in-memory cosine similarity store (HNSW index when `> 1,000` chunks).
-- **`iosApp/Sources/Data/LLMEngine/`**: `actor`-isolated on-device `MLX Swift` (`Gemma` / `Phi-3-mini`) or `MediaPipe` LLM inference engine, gated by `ModelGateView`.
+- **`iosApp/Sources/Domain/RAG/` and `Domain/Entities/`**: `EmbeddingProvider` and the `Sendable` `KnowledgeChunk` value.
+- **`iosApp/Sources/Data/RAG/`**: Markdown/PDF parser, chunker, native embedding, in-memory vector store and knowledge index.
+- **Current status:** Retrieval is tested independently; `TestView` uses a deterministic fallback. Model provisioning, LLM inference and RAG integration into assessments are planned for Milestone 4.
+- **Physical-device validation:** The diagnostic IPA and report workflow are described in `specs/06-roadmap-milestones.md`; physical-device validation remains pending.
 
-## Step-by-Step Pedagogical Feedback Procedure
+## Target Pedagogical Feedback Procedure
 
 ### 1. Knowledge Ingestion & ~300-Token Chunking
 1. Scan bundled `.md` and `.pdf` assets from `/knowledge-base/` (`grammar-rules/`, `spanish-interference/`).
@@ -44,7 +44,7 @@ Consult these specs and knowledge-base docs before building or modifying RAG cod
 1. When the user submits an incorrect (`0.0` pt) answer during a skill assessment in `TestView`, pause test progression immediately (diagnostic `PlacementTestView` suppresses mid-test RAG sheets).
 2. Trigger an asynchronous local query to the `VectorStore` using:
    `"Grammar rule for {skill.topic} and error: {userAnswer} instead of {correctAnswer}"`
-3. Filter or prioritize by matching `level` and `topic` metadata (including `spanish-interference` chunks), and retrieve the **Top-3 most relevant chunks** via cosine similarity.
+3. Retrieve the **Top-3 most relevant chunks** via cosine similarity. Current level/topic filters exclude interference documents with different metadata; design and verify inclusion of applicable interference context during integration.
 
 ### 3. On-Device LLM Prompt Assembly & Non-Blocking Execution
 1. Confirm `ModelGateView` readiness (`ready`) before invoking local inference.
@@ -75,7 +75,7 @@ The response rendered in the `TestView` feedback sheet and saved to `AnswerRecor
 ### 5. Active Acknowledgment, Persistence & Graceful Fallback
 1. **Active Acknowledgment:** Require the user to tap the English **"Continue"** button on the `TestView` feedback sheet before advancing to the next question.
 2. **Persistence:** Save the generated explanation in `AnswerRecord.ragFeedback` so it can be reviewed later as expandable cards in `FeedbackView`.
-3. **Graceful Fallback:** In Milestone 0–2 (before LLM integration) or if the local LLM fails/times out, return a deterministic Spanish fallback card adhering to the exact 3-heading Markdown template above using the Top-1 retrieved chunk (or skill rule summary), so `TestView` and `FeedbackView` never render empty errors.
+3. **Graceful Fallback:** Before LLM integration or if the local LLM fails/times out, return a deterministic Spanish fallback card adhering to the exact 3-heading Markdown template above using the Top-1 retrieved chunk (or skill rule summary), so `TestView` and `FeedbackView` never render empty errors. The current fallback uses a skill rule, not retrieved context.
 
 ### 6. Unit Testing & Verification (`iosApp/Tests/`)
 - Verify chunking stays near ~300 tokens and preserves `level` (`A1`…`B2_ADV`), `topic`, and `chunkIndex` metadata.

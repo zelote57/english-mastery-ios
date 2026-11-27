@@ -19,13 +19,13 @@ Consult these files before writing or updating tests:
 - [02-curriculum-skills.md](../../../specs/02-curriculum-skills.md) — `questionType` grading matrix and deterministic Levenshtein partial-credit rules.
 - [03-rag-architecture.md](../../../specs/03-rag-architecture.md) — Chunker (~300 tokens), Top-3 cosine retrieval, Spanish output template, and fallback contract.
 - [04-data-models.json](../../../specs/04-data-models.json) — Canonical schema contracts.
-- [EnglishMasteryTests.swift](../../../iosApp/Tests/EnglishMasteryTests.swift) — Existing XCTest target entry point.
+- [RAGPipelineTests.swift](../../../iosApp/Tests/RAGPipelineTests.swift) — Existing RAG and native embedding tests.
 - [Project.yml](../../../iosApp/Project.yml) — `EnglishMasteryTests` bundle configuration.
 
 ## Step-by-Step Testing Procedure
 
 ### 1. Framework & Target Structure
-- Use **`XCTest`** (`import XCTest`, `@testable import EnglishMastery`) matching `EnglishMasteryTests.swift` and CI (`xcodebuild test` in `.github/workflows/ios-build.yml`).
+- Use **`XCTest`** (`import XCTest`, `@testable import EnglishMastery`) matching existing tests and CI (`xcodebuild test` in `.github/workflows/ios-build.yml`).
 - Organize test files by feature/domain component under `iosApp/Tests/` (all files inside `Tests/` are auto-included by `iosApp/Project.yml`), e.g.:
   - `ScoringEngineTests.swift` (Levenshtein partial credit, normalization, `multipleChoice` vs `fillBlank`)
   - `ProgressionEngineTests.swift` (onboarding, 18-Q placement, monotonic `bestScore`, 9-phase unlocking)
@@ -46,7 +46,7 @@ final class SwiftDataPersistenceTests: XCTestCase {
     private func makeInMemoryContainer() throws -> ModelContainer {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(
-            for: User.self, Phase.self, Skill.self, Question.self, Attempt.self, AnswerRecord.self,
+            for: UserModel.self, PhaseModel.self, SkillModel.self, QuestionModel.self, AttemptModel.self, AnswerRecordModel.self,
             configurations: config
         )
     }
@@ -59,15 +59,14 @@ final class SwiftDataPersistenceTests: XCTestCase {
 }
 ```
 - Annotate SwiftUI ViewModel / `mainContext` test classes or methods with `@MainActor` so Swift 6 strict concurrency compiles cleanly without `@unchecked Sendable` hacks.
-- Pure `Domain` tests (`ScoringEngine`, `Levenshtein`, `AdvancePhaseUseCase`) should NOT import `SwiftData` and can run without `@MainActor` using synchronous or `async throws` test methods.
+- Pure `Domain` tests (`ScoringEngine`, `EvaluateAttemptUseCase`) should NOT import `SwiftData` and can run without `@MainActor` using synchronous or `async throws` test methods.
 
 ### 3. Protocol Fakes for the Local RAG & LLM Pipeline
-Never call real local weights or network in unit tests. Build lightweight `Sendable` fakes conforming to `Domain/RAGPipeline/` protocols:
-- `MockDocumentParser`: returns fixed UTF-8 grammar sections with phase metadata.
-- `MockEmbeddingService`: maps known keywords (`"past"`, `"preposition"`, `"false friend"`) to deterministic orthogonal/unit `[Float]` vectors so cosine similarity ordering is 100% predictable.
+Never use network or real LLM weights in tests. Use `EmbeddingProvider` fakes for deterministic ranking tests; separately retain native `NLEmbedding` integration and relevance tests against the bundled corpus.
+For future LLM integration, create a test double at the real inference boundary:
 - `MockLLMEngine`:
   - Happy path: returns a valid 3-heading Spanish Markdown card (`< 150` words) and captures the assembled prompt to assert `{level}`, `{user_answer}`, `{correct_answer}`, `{rag_chunks}`, and Spanish output instruction were injected.
-  - Failure / timeout path: throws an error to prove `GenerateFeedbackUseCase` returns a valid 3-heading Spanish fallback card without crashing or leaving `AnswerRecord.ragFeedback` blank.
+  - Failure / timeout path: throws an error to prove the feedback use case returns a valid 3-heading Spanish fallback card without crashing or leaving `AnswerRecord.ragFeedback` blank.
 
 ### 4. Mandatory Edge-Case Matrix
 Every Domain & RAG test suite MUST cover these exact boundary cases:

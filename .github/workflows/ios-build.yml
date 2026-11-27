@@ -84,6 +84,8 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
+            SWIFT_ACTIVE_COMPILATION_CONDITIONS='$(inherited) RAG_DIAGNOSTICS' \
+            INFOPLIST_KEY_RAGBuildCommit="${{ github.sha }}" \
             2>&1 | tee .ci-logs/text/02-build-for-testing.log
 
       - name: Run Tests
@@ -100,7 +102,46 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
+            SWIFT_ACTIVE_COMPILATION_CONDITIONS='$(inherited) RAG_DIAGNOSTICS' \
+            INFOPLIST_KEY_RAGBuildCommit="${{ github.sha }}" \
             2>&1 | tee .ci-logs/text/03-xcodebuild-test.log
+
+      - name: Build unsigned diagnostic IPA
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project iosApp/EnglishMastery.xcodeproj \
+            -scheme EnglishMastery \
+            -destination 'generic/platform=iOS' \
+            -sdk iphoneos \
+            -configuration Debug \
+            -derivedDataPath .derivedData-device \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            SWIFT_ACTIVE_COMPILATION_CONDITIONS='$(inherited) RAG_DIAGNOSTICS' \
+            INFOPLIST_KEY_RAGBuildCommit="${{ github.sha }}" \
+            2>&1 | tee .ci-logs/text/04-device-build.log
+          APP=".derivedData-device/Build/Products/Debug-iphoneos/EnglishMastery.app"
+          test -f "$APP/EnglishMastery"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :RAGBuildCommit' "$APP/Info.plist")" = "${{ github.sha }}"
+          lipo -verify_arch arm64 "$APP/EnglishMastery"
+          mkdir -p .ci-ipa/Payload
+          cp -R "$APP" .ci-ipa/Payload/
+          (cd .ci-ipa && zip -qry EnglishMastery-Diagnostic.ipa Payload)
+          unzip -tq .ci-ipa/EnglishMastery-Diagnostic.ipa
+          printf 'Commit: %s\n' "${{ github.sha }}" > .ci-ipa/build-info.txt
+          shasum -a 256 .ci-ipa/EnglishMastery-Diagnostic.ipa >> .ci-ipa/build-info.txt
+
+      - name: Upload unsigned diagnostic IPA
+        uses: actions/upload-artifact@v7
+        with:
+          name: rag-diagnostic-ipa-${{ github.run_number }}
+          path: |
+            .ci-ipa/EnglishMastery-Diagnostic.ipa
+            .ci-ipa/build-info.txt
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Summarize Build & Test Diagnostics
         if: always()
@@ -113,6 +154,7 @@ jobs:
               ".ci-logs/text/01-xcodegen.log",
               ".ci-logs/text/02-build-for-testing.log",
               ".ci-logs/text/03-xcodebuild-test.log",
+              ".ci-logs/text/04-device-build.log",
           ]
 
           env_always = {"00-environment.log"}

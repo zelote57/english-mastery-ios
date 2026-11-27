@@ -82,15 +82,15 @@
         "userAnswer": { "type": "String" },
         "pointsEarned": { "type": "Double", "description": "1.0 (correct), 0.5 (partial spelling slip), or 0.0 (incorrect)" },
         "isCorrect": { "type": "Bool", "description": "True only when pointsEarned == 1.0" },
-        "ragFeedback": { "type": "String?", "description": "Spanish RAG-generated explanation stored when pointsEarned == 0.0" }
+        "ragFeedback": { "type": "String?", "description": "Spanish explanation stored when pointsEarned == 0.0; currently deterministic, RAG-generated in the planned LLM integration" }
       }
     },
     "Chunk": {
       "properties": {
         "id": { "type": "UUID" },
-        "sourceFile": { "type": "String", "description": "Source file name" },
+        "sourceFile": { "type": "String", "description": "Source path relative to knowledge-base for bundled documents" },
         "content": { "type": "String", "description": "Chunk text (~300 tokens)" },
-        "embedding": { "type": "[Float]", "description": "Embedding vector" },
+        "embedding": { "type": "[Float]", "description": "Embedding vector associated with the chunk in the in-memory index; currently stored separately in IndexedChunk" },
         "level": {
           "type": "String",
           "enum": ["A1", "A2_INIT", "A2_INT", "A2_ADV", "B1_INIT", "B1_INT", "B1_ADV", "B2_INIT", "B2_ADV"]

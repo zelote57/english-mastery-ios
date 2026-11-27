@@ -29,7 +29,7 @@
 ## Onboarding & Placement Routing
 On first launch, local seeding automatically creates the default local `User` profile (`name: "Learner"`, `hasCompletedOnboarding: false`) alongside all 9 `Phase` and 29 `Skill` records.
 
-After `ModelGateView` confirms local LLM weights are provisioned (or in Milestone 0–2 placeholder mode), new users choose between:
+After `ModelGateView` loads the local curriculum (currently a placeholder for future model provisioning), new users choose between:
 1. **Start from Scratch:** Sets `user.currentPhaseId` to Phase 1 (`A1`) with status `available`; Phases 2–9 start `locked`.
 2. **Take Placement Test:** Runs the 18-question diagnostic test (2 questions per phase, ordered/evaluated sequentially across `A1`…`B2_ADV`).
    - **Placement Rule (Sequential Block Threshold):** Evaluate each phase block $1 \dots 9$ in ascending order. A phase is cleared during placement when the user scores `>= 1.5` out of `2.0` points on its 2 diagnostic questions (accepting exact matches or one minor Levenshtein spelling slip, while blocking lucky single guesses).
@@ -53,7 +53,7 @@ After `ModelGateView` confirms local LLM weights are provisioned (or in Mileston
 Each question in a test is graded according to the rubrics in `02-curriculum-skills.md`:
 - **Correct (`+1.0` point):** Exact answer or accepted synonym (`isCorrect = true`).
 - **Partial (`+0.5` points):** Correct grammatical structure with a minor spelling/typography slip in free-text questions (`fillBlank` / `translation`).
-- **Incorrect (`0.0` points):** Concept, structural, vocabulary, or Spanish-interference error (`isCorrect = false`) → triggers immediate on-device RAG + LLM feedback sheet in `TestView` and queues the question for the post-test drill.
+- **Incorrect (`0.0` points):** Concept, structural, vocabulary, or Spanish-interference error (`isCorrect = false`) → triggers an immediate Spanish feedback sheet in `TestView` and queues the question for the post-test drill. Today the explanation is deterministic; RAG + LLM feedback is planned for Milestone 4.
 
 The normalized attempt score is `earnedPoints / Double(totalQuestions)` (ranging from `0.0` to `1.0`).
 
@@ -90,5 +90,5 @@ if skill.phaseId == user.currentPhaseId,
 ```
 
 ## AI Tutor Feedback
-- On each incorrect (`0.0`) answer during a skill assessment in `TestView`, the on-device RAG + LLM pipeline (`03-rag-architecture.md`) immediately pauses progression and generates a Spanish Duolingo-style explanation (`### 💡 ¿Por qué no es correcta?`, `### 📘 Regla clave`, `### 🔍 Ejemplos prácticos`) stored in `AnswerRecord.ragFeedback` for later review in `FeedbackView`.
+- On each incorrect (`0.0`) answer during a skill assessment in `TestView`, progression pauses and a deterministic Spanish explanation with three headings is stored in `AnswerRecord.ragFeedback` for later review. The on-device RAG + LLM pipeline described in `03-rag-architecture.md` is the Milestone 4 target, not the current behavior.
 - All SwiftUI controls, titles, buttons (e.g., `"Continue"`), and test prompts remain strictly in **English**, while pedagogical error explanations are generated in **Spanish**.

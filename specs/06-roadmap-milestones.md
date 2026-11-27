@@ -32,19 +32,54 @@
 - [x] Pipeline unit tests
 - [x] Add grammar, Spanish-interference, and prompt-template knowledge assets for all 29 skills and 9 phases
 - [x] Evaluate retrieval relevance against representative seeded mistakes across all 29 skills
-- [ ] Validate offline retrieval and performance on a physical device
+- [ ] Produce a device-compatible unsigned diagnostic IPA in GitHub Actions for personal installation with Sideloadly
+- [ ] Add a diagnostic-only screen to run the benchmark on a device and export the results
+- [ ] Install the IPA, execute the diagnostic offline on a physical iPhone, and review the resulting evidence
 
 The simulator retrieval benchmark uses 36 zero-point answers from 29 skills. The explicitly
 selected rule appeared in the filtered top three for 36/36 queries and ranked first for 33/36.
 This representative sample does not establish relevance for every question or unfiltered
 search. Physical-device validation of offline operation, latency, and memory usage remains
-necessary.
+necessary. The benchmark and 42 tests passed in
+[GitHub Actions run 46066708173](https://github.com/zelote57/english-mastery-ios/actions/runs/46066708173)
+for commit `f29e4ae`.
+
+#### Physical-device validation procedure
+1. After simulator tests pass, Actions builds for a generic iOS **device**, packages the unsigned
+   `.app` under `Payload/` in an IPA, and publishes it as a downloadable artifact with its commit
+   SHA and build identity. Verify the artifact and Sideloadly compatibility on a real device
+   rather than assuming an unsigned package is installable.
+2. The owner downloads the IPA and signs and installs it locally with Sideloadly and their own
+   Apple account. Keep credentials, private keys, provisioning profiles, and device identifiers
+   out of the repository, GitHub artifacts, and the diagnostic report. Sideloading can be subject
+   to device, account, signing, and OS restrictions; installation is a separate acceptance check.
+3. Use the English-language diagnostic screen available **only in the diagnostic build**. It uses
+   the real bundled corpus, native embedding, index, and the same 36 seeded cases and relevance
+   judgments shared with the simulator benchmark. It does not modify learner progress or
+   invoke the LLM; missing embeddings and indexing or retrieval failures are reported.
+4. After installation, enable airplane mode and verify Wi-Fi and cellular connectivity are off.
+   Run the diagnostic from a fresh app launch and record indexing time, per-query retrieval
+   timings and their average, sampled resident memory and its method, top-1/top-3 results, and errors.
+   Record unavailable measurements explicitly. Airplane mode is a manual test condition, not
+   proof that every possible execution path is network-free.
+5. Export a shareable local JSON report containing the app build and commit SHA, benchmark and
+   curriculum version and manifest hash, device model identifier and iOS version, manual offline-condition confirmation,
+   result counts, per-case IDs and ranks, timing units and memory measurement, and failures.
+   Exclude user answers, learner data, account information, UDID, and credentials. The owner
+   reviews and shares it after the offline run; the app must not upload it automatically.
+6. Close Milestone 3 only after successful installation, completion of all 36 cases with the
+   expected rule in top-3 for each, no hidden errors, and a reviewed report with usable timing
+   and memory evidence. Investigate discrepancies or unavailable measurements rather than
+   marking the milestone complete. No latency or memory pass threshold is currently specified;
+   define one before claiming that a particular performance target has been met. Instruments
+   profiling and release distribution remain Milestone 5 work.
 
 ### 🤖 Milestone 4 — LLM Integration
 - [ ] Integrate MLX Swift (or MediaPipe) for on-device inference (`Gemma` / `Phi-3-mini`)
 - [ ] Real `ModelGateView` with app-private model download
 - [ ] Streaming Spanish RAG-augmented explanation sheet in `TestView`
 - [ ] Persist dynamic `ragFeedback` to `AnswerRecord` for `FeedbackView`
+- [ ] Integrate retrieval into the assessment flow and verify appropriate Spanish-interference context for each relevant error
 
 ### 🎯 Milestone 5 — Polish & Release
 - [ ] Animations and micro-interactions

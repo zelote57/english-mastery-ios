@@ -68,7 +68,7 @@
 | `B2_ADV-03` | Discourse markers & linking words | however, nevertheless, furthermore |
 
 ## Assessment Structure & Rubrics
-- **Skill Assessment Length:** 15 questions per `Attempt` (`attemptType: "skillAssessment"`, `totalQuestions: 15`), drawn from a `>15` question bank per skill (with shuffled order and randomized `distractors`, plus optional RAG-assisted contextual variation in P1+).
+- **Skill Assessment Length:** 15 questions per `Attempt` (`attemptType: "skillAssessment"`, `totalQuestions: 15`), drawn from a `>15` question bank per skill. The current sampler shuffles and prioritizes unanswered or previously missed questions, then fills from the remaining questions; multiple-choice options are shuffled. RAG-assisted contextual variation is not implemented.
 - **Placement Test Length:** 18 diagnostic questions (`attemptType: "placementTest"`, `skillId: nil`, `totalQuestions: 18`), using 2 `isPlacementEligible == true` questions per phase from `A1` to `B2_ADV`, evaluated sequentially (`>= 1.5 / 2.0` per phase to advance; first phase `< 1.5` sets target $K$, capped at Phase 9 `B2_ADV`).
 - **Question Types (`04-data-models.json`):**
   - `multipleChoice` & `reorder`: Binary grading (`+1.0` or `0.0`).

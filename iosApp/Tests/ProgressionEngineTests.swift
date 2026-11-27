@@ -299,7 +299,8 @@ final class ProgressionEngineTests: XCTestCase {
             skills: skills,
             submissions: buildSubmissions(failingPhaseIndices: [])
         )
-        XCTAssertEqual(perfectScore.attempt?.score, 1.0, accuracy: 0.0001)
+        let perfectAttempt = try XCTUnwrap(perfectScore.attempt, "placement attempt should not be nil when all 18 blocks pass")
+        XCTAssertEqual(perfectAttempt.score, 1.0, accuracy: 0.0001)
         XCTAssertEqual(perfectScore.targetPhase.level, .b2Adv)
         XCTAssertEqual(perfectScore.updatedPhases[8].status, .available)
         XCTAssertTrue(perfectScore.updatedPhases[0..<8].allSatisfy { $0.status == .skippedPassed })

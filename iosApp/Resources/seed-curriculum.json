@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "phases": [
     {
       "id": "5ff25c1c-8f32-5405-bbe4-9bc1ade7dfa5",
@@ -1759,7 +1759,7 @@
     {
       "id": "a7aa537c-036e-54d6-954c-790f7510d479",
       "skillId": "581f21fb-f6ed-52b5-92fb-1ccdad8bd99d",
-      "prompt": "Choose the correct plan form: Look at those dark clouds! It ___ rain.",
+      "prompt": "Choose the prediction based on evidence: Look at those dark clouds! It ___ rain.",
       "correctAnswer": "is going to",
       "acceptedSynonyms": [],
       "distractors": [
@@ -4072,7 +4072,7 @@
       "correctAnswer": "was",
       "acceptedSynonyms": [],
       "distractors": [
-        "is",
+        "are",
         "were",
         "has been"
       ],
@@ -5245,7 +5245,11 @@
       "skillId": "64d2f8b6-d492-5830-bd49-a66659cd2e00",
       "prompt": "Rewrite using 'SUCH' (max 5 words): The film was so boring that we left. -> It was ___ that we left.",
       "correctAnswer": "such a boring film",
-      "acceptedSynonyms": [],
+      "acceptedSynonyms": [
+        "such a dull film",
+        "such a tedious film",
+        "such a boring movie"
+      ],
       "distractors": [],
       "questionType": "fillBlank",
       "isPlacementEligible": true

@@ -57,7 +57,7 @@ enum CurriculumSeeder {
 
     static func seed(from jsonData: Data, in context: ModelContext) throws {
         let payload = try JSONDecoder().decode(SeedPayload.self, from: jsonData)
-        guard (1...2).contains(payload.version ?? 1) else {
+        guard (1...3).contains(payload.version ?? 1) else {
             throw SeedError.invalidCurriculum("Unsupported curriculum version.")
         }
         guard !payload.phases.isEmpty else {

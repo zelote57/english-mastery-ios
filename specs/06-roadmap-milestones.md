@@ -52,7 +52,7 @@
 > **P1:** Milestones 3-4 (RAG + on-device LLM)
 > **P2:** Milestone 5 (polish and launch)
 
-Curriculum version 2 corrects individual answer data. Existing installations reconcile bundled
+Curriculum version 3 corrects individual answer data. Existing installations reconcile bundled
 content transactionally on launch; attempts and their original scores remain unchanged.
 Historical answers reference question IDs rather than question-text snapshots, so later
 content edits can change the wording displayed with an older attempt.

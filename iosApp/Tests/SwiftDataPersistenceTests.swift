@@ -293,6 +293,21 @@ final class SwiftDataPersistenceTests: XCTestCase {
         XCTAssertTrue(coordinator.questions.isEmpty)
     }
 
+    func testPlacementAcceptsEquivalentBoringFilmTransformations() throws {
+        let container = try makeInMemoryContainer()
+        try CurriculumSeeder.seedIfNeeded(in: container.mainContext)
+        let model = try XCTUnwrap(container.mainContext.fetch(FetchDescriptor<QuestionModel>()).first {
+            $0.isPlacementEligible && $0.correctAnswer == "such a boring film"
+        })
+        model.acceptedSynonymsJSON = "[]"
+        try container.mainContext.save()
+        try CurriculumSeeder.seedIfNeeded(in: container.mainContext)
+        let question = try XCTUnwrap(model.toDomain())
+        for answer in ["such a dull film", "such a tedious film", "such a boring movie"] {
+            XCTAssertEqual(ScoringEngine.grade(answer: answer, for: question).pointsEarned, 1)
+        }
+    }
+
     func testFailedCurriculumUpdateRollsBackEarlierChanges() throws {
         let container = try makeInMemoryContainer()
         let context = container.mainContext

@@ -31,12 +31,14 @@
 - [x] In-memory VectorStore with cosine similarity search
 - [x] Pipeline unit tests
 - [x] Add grammar, Spanish-interference, and prompt-template knowledge assets for all 29 skills and 9 phases
-- [ ] Evaluate retrieval relevance against the completed corpus and validate on a physical device
+- [x] Evaluate retrieval relevance against representative seeded mistakes across all 29 skills
+- [ ] Validate offline retrieval and performance on a physical device
 
-The simulator retrieval benchmark uses 36 zero-point answers from 29 skills and checks whether
-an explicitly selected rule appears in the filtered top three. It also reports top-one hits.
-This limited sample does not establish relevance for every question, unfiltered search, offline
-device operation, latency, or memory usage; physical-device validation remains necessary.
+The simulator retrieval benchmark uses 36 zero-point answers from 29 skills. The explicitly
+selected rule appeared in the filtered top three for 36/36 queries and ranked first for 33/36.
+This representative sample does not establish relevance for every question or unfiltered
+search. Physical-device validation of offline operation, latency, and memory usage remains
+necessary.
 
 ### 🤖 Milestone 4 — LLM Integration
 - [ ] Integrate MLX Swift (or MediaPipe) for on-device inference (`Gemma` / `Phi-3-mini`)

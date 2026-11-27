@@ -25,7 +25,6 @@ struct EnglishMasteryApp: App {
         } catch {
             fatalError("Failed to configure SwiftData persistence: \(error)")
         }
-        #endif
     }
 
     var body: some Scene {
@@ -35,3 +34,4 @@ struct EnglishMasteryApp: App {
         .modelContainer(modelContainer)
     }
 }
+#endif

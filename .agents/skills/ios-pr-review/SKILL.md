@@ -16,7 +16,7 @@ Structured code review rubric tailored to this repository's Swift 6 / SwiftUI / 
 ## Reference Specs (Progressive Disclosure)
 
 Consult the relevant spec before judging domain or UI logic in a diff:
-- [AGENTS.md](../../../AGENTS.md) — Swift 6 strict concurrency, MVVM, `@Observable`, subview size (~50 lines), and file naming rules.
+- [AGENTS.md](../../../AGENTS.md) — Swift 6 strict concurrency, MVVM, `@Observable`, subview size (~50 lines), file naming, and anti-overengineering rules.
 - [01-cambridge-phases.md](../../../specs/01-cambridge-phases.md) — 9 phases (`A1`…`B2_ADV`), `>= 0.80` mastery threshold, monotonic `bestScore`, `skippedPassed`, and Drill Score Isolation.
 - [02-curriculum-skills.md](../../../specs/02-curriculum-skills.md) — 29 skills, deterministic Levenshtein partial credit (`fillBlank`/`translation` only), and rubric rules.
 - [03-rag-architecture.md](../../../specs/03-rag-architecture.md) — 100% on-device execution, ~300-token chunking, Top-3 cosine retrieval, grounded Spanish prompts.
@@ -63,6 +63,7 @@ Consult the relevant spec before judging domain or UI logic in a diff:
 
 #### Axis E — Code Quality & Duplication (`Minor` / `Major`)
 - Shared normalization/scoring helpers are reused rather than duplicated across `Skill` and `Placement` flows.
+- No over-engineering: flag speculative single-implementation protocols, pass-through wrappers/DTOs, or custom utilities where Swift standard library / SwiftUI / SwiftData primitives suffice.
 - No speculative unused files, dead code, commented-out blocks, or unrelated docstring deletions.
 
 ### 3. Output Format & GitHub Review Publishing

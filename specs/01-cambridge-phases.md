@@ -62,6 +62,7 @@ The normalized attempt score is `earnedPoints / Double(totalQuestions)` (ranging
 - Every completed official assessment creates an `Attempt` record with `timestamp`, `score`, `earnedPoints`, `totalQuestions`, `correctAnswers`, and linked `[AnswerRecord]` items.
 - `bestScore` is updated monotonically (`max(bestScore, attempt.score)`). Once a skill is passed (`isPassed == true`), a lower score on a later practice attempt **never** revokes `isPassed`.
 - `SkillDetailView` displays the user's **best attempt** (`bestScore`), total attempts, and the **improvement trend** across the last 5 official attempts.
+- **Streak Rule:** `user.streakDays` increments by 1 when a completed `skillAssessment` occurs on the next calendar day relative to `user.lastPracticeDate` (stays unchanged on the same day, resets to `1` after missed days, regardless of whether the attempt passed or failed). Neither `placementTest` nor mistake drills affect `streakDays`.
 - **Drill Score Isolation:** Completing `"Practice Missed Questions"` updates learning reinforcement only; it **never** creates an official `Attempt`, **never** overwrites `Attempt.score` or `Skill.bestScore`, and **never** unlocks a skill or phase.
 
 ## Approval Logic

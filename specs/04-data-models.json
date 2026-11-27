@@ -8,8 +8,8 @@
         "name": { "type": "String", "description": "User name" },
         "currentPhaseId": { "type": "UUID", "description": "FK to the user's active Phase" },
         "createdAt": { "type": "Date", "description": "Account creation date" },
-        "streakDays": { "type": "Int", "default": 0, "description": "Consecutive calendar days with completed official practice" },
-        "lastPracticeDate": { "type": "Date?", "description": "Timestamp of the most recent completed official Attempt for streak calculation" },
+        "streakDays": { "type": "Int", "default": 0, "description": "Consecutive calendar days with a completed official skillAssessment (passed or failed; placementTest excluded)" },
+        "lastPracticeDate": { "type": "Date?", "description": "Timestamp of the most recent completed official skillAssessment for streak calculation" },
         "hasCompletedOnboarding": { "type": "Bool", "default": false, "description": "True after selecting Start from Scratch or finishing Placement Test" },
         "placementPhaseCode": { "type": "String?", "description": "Optional Phase.level code assigned by the 18-question Placement Test" }
       }

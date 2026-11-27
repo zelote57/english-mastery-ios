@@ -3,7 +3,7 @@ import SwiftData
 
 /// Learner profile tracking active Cambridge phase, onboarding state, and daily practice streak.
 @Model
-final class User {
+final class UserModel {
     @Attribute(.unique) let id: UUID
     var name: String
     var currentPhaseId: UUID

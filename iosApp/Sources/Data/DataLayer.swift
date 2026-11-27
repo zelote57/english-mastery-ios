@@ -25,7 +25,7 @@ enum DataLayer {
             PhaseModel.self,
             SkillModel.self,
             QuestionModel.self,
-            User.self
+            UserModel.self
         ])
         return try! ModelContainer(for: schema, configurations: [])
     }()

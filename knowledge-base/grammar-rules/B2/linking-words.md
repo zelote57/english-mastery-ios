@@ -4,6 +4,8 @@ Linking words signal a relationship between ideas. **However** and **nevertheles
 
 Punctuation and grammar depend on the connector. **However** can begin a new sentence and is commonly followed by a comma: “It was raining. However, we went out.” **Although** introduces a dependent clause: “Although it was raining, we went out.” In standard writing, do not join two independent clauses with only a comma and **however**; use a full stop or semicolon.
 
+**Despite** introduces a noun phrase or an **-ing** form, not a clause on its own: “Despite the rain, we went out.” A clause can follow **despite the fact that**: “Despite the fact that it rained, we went out.”
+
 - ❌ “It was raining, however we went out.” → ✅ “It was raining; however, we went out.” — Llovía; sin embargo, salimos.
 - ❌ “Although it was late, but we stayed.” → ✅ “Although it was late, we stayed.” — Aunque era tarde, nos quedamos.
 - ❌ “She was ill. Furthermore, she stayed at home,” when a result is intended → ✅ “She was ill. Therefore, she stayed at home.” — Estaba enferma. Por lo tanto, se quedó en casa.

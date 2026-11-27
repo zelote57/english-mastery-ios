@@ -4,6 +4,8 @@ A **defining** relative clause identifies which person or thing is meant: “The
 
 A **non-defining** relative clause adds extra information about an already identified person or thing: “Ana, who lives in Madrid, is a teacher.” Use commas in writing, do not use **that** as its relative pronoun, and do not omit the pronoun. The comma distinction affects the intended meaning.
 
+Use **whose** before a noun to express possession: “the neighbour whose car was towed”. Do not confuse **whose** with **who's**, a contraction of “who is” or “who has”.
+
 - ❌ “My brother, that lives in Lima, is a doctor.” → ✅ “My brother, who lives in Lima, is a doctor.” — Mi hermano, que vive en Lima, es médico.
 - ❌ “The woman she works here is my neighbour.” → ✅ “The woman who works here is my neighbour.” — La mujer que trabaja aquí es mi vecina.
 - ❌ “This is the book which I borrowed it.” → ✅ “This is the book which I borrowed.” — Este es el libro que tomé prestado.

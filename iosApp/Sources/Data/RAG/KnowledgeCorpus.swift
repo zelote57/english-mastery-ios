@@ -28,7 +28,7 @@ enum KnowledgeCorpus {
         return try entries.flatMap { entry in
             let url = root.appendingPathComponent(entry.path).standardizedFileURL
             guard url.path.hasPrefix(base + "/") else { throw CorpusError.invalidPath(entry.path) }
-            return try DocumentParser.parse(url: url, level: entry.level, topic: entry.topic)
+            return try DocumentParser.parse(url: url, level: entry.level, topic: entry.topic, sourceFile: entry.path)
         }
     }
 }

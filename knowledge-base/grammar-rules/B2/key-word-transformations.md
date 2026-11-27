@@ -4,6 +4,10 @@ In a key word transformation, complete a second sentence so that it retains the 
 
 Check tense, negatives, pronouns, prepositions, and whether the subject performs or receives an action. More than one wording can sometimes preserve the meaning; use the task instructions and context to evaluate it rather than assuming that a single synonym always works.
 
+To transform **so + adjective** before a singular countable noun, use **such a/an + adjective + noun**: “The film was so boring” can become “It was such a boring film”. Choose **a** or **an** by sound.
+
+For contrast, **in spite of** takes a noun phrase or an **-ing** form: “Although it rained, we walked” can become “In spite of the rain, we walked”. **Although** instead introduces a clause.
+
 - Original: “I last saw Mia two years ago.” Key word: **FOR**.
   ❌ “I haven't seen Mia since two years.” → ✅ “I haven't seen Mia for two years.” — No veo a Mia desde hace dos años.
 - Original: “It isn't necessary to pay today.” Key word: **HAVE**.

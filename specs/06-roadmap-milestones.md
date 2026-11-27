@@ -33,6 +33,11 @@
 - [x] Add grammar, Spanish-interference, and prompt-template knowledge assets for all 29 skills and 9 phases
 - [ ] Evaluate retrieval relevance against the completed corpus and validate on a physical device
 
+The simulator retrieval benchmark uses 36 zero-point answers from 29 skills and checks whether
+an explicitly selected rule appears in the filtered top three. It also reports top-one hits.
+This limited sample does not establish relevance for every question, unfiltered search, offline
+device operation, latency, or memory usage; physical-device validation remains necessary.
+
 ### 🤖 Milestone 4 — LLM Integration
 - [ ] Integrate MLX Swift (or MediaPipe) for on-device inference (`Gemma` / `Phi-3-mini`)
 - [ ] Real `ModelGateView` with app-private model download

@@ -8,7 +8,7 @@ enum DocumentParser {
         case emptyDocument
     }
 
-    static func parse(url: URL, level: PhaseLevel, topic: String) throws -> [KnowledgeChunk] {
+    static func parse(url: URL, level: PhaseLevel, topic: String, sourceFile: String? = nil) throws -> [KnowledgeChunk] {
         let text: String
         switch url.pathExtension.lowercased() {
         case "md":
@@ -21,7 +21,9 @@ enum DocumentParser {
         default:
             throw ParseError.unsupportedFormat(url.pathExtension)
         }
-        let chunks = DocumentChunker.split(text, sourceFile: url.lastPathComponent, level: level, topic: topic)
+        let chunks = DocumentChunker.split(
+            text, sourceFile: sourceFile ?? url.lastPathComponent, level: level, topic: topic
+        )
         guard !chunks.isEmpty else { throw ParseError.emptyDocument }
         return chunks
     }

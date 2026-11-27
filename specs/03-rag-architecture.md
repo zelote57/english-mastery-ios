@@ -18,6 +18,7 @@ Retrieval-Augmented Generation pipeline that runs **100% on-device** (iPhone 13 
 - Reads PDF and Markdown files from `/knowledge-base/` (`grammar-rules/`, `spanish-interference/`, `prompt-templates/`).
 - Extracts plain text and splits it into chunks of ~300 tokens preserving sentence/example boundaries.
 - Each chunk stores metadata: `level` (mapped to the 9 phase codes `A1`…`B2_ADV`), `topic`, `sourceFile`, and `chunkIndex`.
+- For bundled documents, `sourceFile` is the path relative to `knowledge-base`, distinguishing files with the same basename.
 - The app bundles `/knowledge-base/` as a folder. `manifest.json` lists each indexed Markdown/PDF file and its phase and topic; currently only the entries in the manifest are indexed.
 - Chunking uses approximately 225 word tokens as a 300-token estimate. Paragraphs and sentences are kept together where possible; exceptionally long sentences are split at word boundaries.
 

@@ -17,27 +17,6 @@ struct FeedbackView: View {
                         CelebrationView()
                     }
 
-                    private struct CelebrationView: View {
-                        @State private var animate = false
-
-                        var body: some View {
-                            HStack {
-                                Image(systemName: "party.popper.fill")
-                                    .rotationEffect(.degrees(animate ? 15 : -15))
-                                    .scaleEffect(animate ? 1.2 : 1)
-                                Text("Great work!")
-                                Image(systemName: "sparkles")
-                                    .scaleEffect(animate ? 1.2 : 0.8)
-                            }
-                            .font(.title2.bold())
-                            .foregroundStyle(.green)
-                            .onAppear {
-                                withAnimation(.easeInOut(duration: 0.6).repeatCount(3, autoreverses: true)) {
-                                    animate = true
-                                }
-                            }
-                        }
-                    }
                     LabeledContent("Score", value: "\(Int(attempt.score * 100))%")
                     LabeledContent("Points", value: "\(attempt.earnedPoints.formatted()) / \(attempt.totalQuestions)")
                 }
@@ -64,6 +43,28 @@ struct FeedbackView: View {
                 }
             }
             .navigationTitle("Results")
+        }
+    }
+}
+
+private struct CelebrationView: View {
+    @State private var animate = false
+
+    var body: some View {
+        HStack {
+            Image(systemName: "party.popper.fill")
+                .rotationEffect(.degrees(animate ? 15 : -15))
+                .scaleEffect(animate ? 1.2 : 1)
+            Text("Great work!")
+            Image(systemName: "sparkles")
+                .scaleEffect(animate ? 1.2 : 0.8)
+        }
+        .font(.title2.bold())
+        .foregroundStyle(.green)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 0.6).repeatCount(3, autoreverses: true)) {
+                animate = true
+            }
         }
     }
 }
